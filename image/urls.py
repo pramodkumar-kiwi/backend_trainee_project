@@ -13,7 +13,6 @@ Routing for Image-Gallery
 """
 
 router.register('image-gallery', views.ImageGalleryViewSet, basename='image-gallery')
-router.register('image', views.ImageViewSet, basename='image')
 
 
 urlpatterns = [

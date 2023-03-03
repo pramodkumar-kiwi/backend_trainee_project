@@ -1,10 +1,21 @@
+import os
+import re
+from django.conf import settings
 from rest_framework import serializers
+from .constants import REGEX
 from .messages import SIGNUP_VALIDATION_ERROR
 from .models import User
-import re
-from .constants import REGEX
-from django.conf import settings
-import os
+
+
+def validate_first_name(value):
+    """
+    check that the first_name should contain only alphabets
+    :param value:first_name
+    :return:if valid return value ,else return Validation error
+    """
+    if not re.match(REGEX["first_name"], value):
+        raise serializers.ValidationError(SIGNUP_VALIDATION_ERROR['first_name']['invalid'])
+    return value
 
 
 class SignupSerializer(serializers.ModelSerializer):
@@ -25,17 +36,8 @@ class SignupSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8, max_length=16, allow_blank=False,
                                      error_messages=SIGNUP_VALIDATION_ERROR['password'])
 
-    def validate_first_name(self, value):
-        """
-        check that the first_name should contain only alphabets
-        :param value:first_name
-        :return:if valid return value ,else return Validation error
-        """
-        if not re.match(REGEX["first_name"], value):
-            raise serializers.ValidationError(SIGNUP_VALIDATION_ERROR['first_name']['invalid'])
-        return value
-
-    def validate_last_name(self, value):
+    @staticmethod
+    def validate_last_name(value):
         """
         check that the last_name should contain only alphabets
         :param value:last_name
@@ -45,7 +47,8 @@ class SignupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(SIGNUP_VALIDATION_ERROR['last_name']['invalid'])
         return value
 
-    def validate_username(self, value):
+    @staticmethod
+    def validate_username(value):
         """
         check that the username length is from 8 to 16 characters,
         and it is alphanumeric with at least one special character
@@ -58,7 +61,8 @@ class SignupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(SIGNUP_VALIDATION_ERROR['username']['exits'])
         return value
 
-    def validate_email(self, value):
+    @staticmethod
+    def validate_email(value):
         """
         checks that the email exits
         :param value: email
@@ -68,7 +72,8 @@ class SignupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(SIGNUP_VALIDATION_ERROR['email']['exits'])
         return value
 
-    def validate_contact(self, value):
+    @staticmethod
+    def validate_contact(value):
         """
         check that the contact should contain only digits
         :param value:contact
@@ -78,7 +83,8 @@ class SignupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(SIGNUP_VALIDATION_ERROR['contact']['invalid'])
         return value
 
-    def validate_password(self, value):
+    @staticmethod
+    def validate_password(value):
         """
         checks password if valid : return value,
         else : return validation error
@@ -95,7 +101,7 @@ class SignupSerializer(serializers.ModelSerializer):
         user = User(**validated_data)
         user.set_password(password)
         directory_path = os.path.join(settings.MEDIA_ROOT, user.username)
-        os.makedirs(directory_path)
+        os.makedirs(directory_path, exist_ok=True)
         user.save()
         return user
 

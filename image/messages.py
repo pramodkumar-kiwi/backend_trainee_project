@@ -1,12 +1,12 @@
 
 SUCCESS_MESSAGES = {
     "CREATED": {
-        "SUCCESSFULLY": "Department created successfully",
+        "SUCCESSFULLY": "Image Gallery created successfully",
     },
     "UPDATED": {
-        "SUCCESSFULLY": "Department updated successfully",
+        "SUCCESSFULLY": "Image Gallery updated successfully",
     },
     "DELETED": {
-        "SUCCESSFULLY": "Department deleted successfully",
+        "SUCCESSFULLY": "Image Gallery deleted successfully",
     }
 }
