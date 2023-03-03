@@ -11,7 +11,7 @@ SIGNUP_VALIDATION_ERROR = {
     },
     'username': {
         "blank": "username can not be blank",
-        "invalid": "username must contain only alphanumeric with at least one special character",
+        "invalid": "username must contain alphabet, digit and special character",
         "required": "username_required",
         "exits": "username exist"
     },

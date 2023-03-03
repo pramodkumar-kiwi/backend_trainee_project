@@ -2,11 +2,11 @@
 view for SignupView
 
 """
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import SignupSerializer, SigninSerializer,UsernameValidatorSerializer, EmailValidatorSerializer
+from .serializers import SignupSerializer, SigninSerializer, UsernameValidatorSerializer, EmailValidatorSerializer
 from .models import User
 
 
@@ -35,16 +35,24 @@ class SignupView(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class SigninView(viewsets.ViewSet):
+class SigninView(viewsets.ModelViewSet):
     """
     Allow only authenticated user to signin.
     If the user is valid provide him the access and refresh token
     and save it to the database.
     """
-    permission_classes = [permissions.AllowAny]
+    queryset = User
     serializer_class = SigninSerializer
+    http_method_names = ['post']
 
-    def create(self, request):
+    def get_queryset(self):
+        """
+        The get_queryset method returns a queryset of Student_Info Model objects.
+        """
+        return User.objects.filter()
+
+    def create(self, request, *args, **kwargs):
+
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid(raise_exception=True):
             user = serializer.validated_data['user']
@@ -57,6 +65,7 @@ class SigninView(viewsets.ViewSet):
 
             return Response({'access': str(refresh.access_token), 'refresh': str(refresh)})
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
 
 class EmailValidatorView(viewsets.ModelViewSet):
     """
@@ -72,7 +81,7 @@ class EmailValidatorView(viewsets.ModelViewSet):
         """
         return User.objects.filter(email="email")
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         """
         get an instance of user and validate it using serializer class
         """
@@ -95,11 +104,10 @@ class UsernameValidatorView(viewsets.ModelViewSet):
         """
         return User.objects.filter(username="username")
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         """
         get an instance of user and validate it using serializer class
         """
         serializer = self.serializer_class(data=request.GET)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data)
-

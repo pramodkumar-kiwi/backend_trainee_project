@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-from .messages import SIGNUP_VALIDATION_ERROR, SIGNIN_VALIDATION_ERROR, EMAIL_VALIDATOR_VALIDATION_ERROR, USERNAME_VALIDATOR_VALIDATION_ERROR
+from .messages import SIGNUP_VALIDATION_ERROR, SIGNIN_VALIDATION_ERROR, EMAIL_VALIDATOR_VALIDATION_ERROR, \
+    USERNAME_VALIDATOR_VALIDATION_ERROR
 from .models import User
 import re
 from .constants import REGEX
@@ -55,18 +56,6 @@ class SignupSerializer(serializers.ModelSerializer):
         """
         if not re.match(REGEX["USERNAME"], value):
             raise serializers.ValidationError(SIGNUP_VALIDATION_ERROR['username']['invalid'])
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError(SIGNUP_VALIDATION_ERROR['username']['exits'])
-        return value
-
-    def validate_email(self, value):
-        """
-        checks that the email exits
-        :param value: email
-        :return: if exists: return Validation error else return value
-        """
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError(SIGNUP_VALIDATION_ERROR['email']['exits'])
         return value
 
     def validate_contact(self, value):
@@ -137,6 +126,7 @@ class SigninSerializer(serializers.ModelSerializer):
         """
         model = User
         fields = ['username', 'password']
+
 
 class EmailValidatorSerializer(serializers.ModelSerializer):
     """
