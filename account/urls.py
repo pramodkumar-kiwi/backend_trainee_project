@@ -7,7 +7,11 @@ from rest_framework.routers import DefaultRouter
 from . import views
 
 router = DefaultRouter()
+"""
+Routing for Signup and Signin
+"""
 router.register('Signup', views.SignupView, basename='signup')
+router.register('Signin', views.SigninView, basename='signin')
 urlpatterns = [
     path('', include(router.urls)),
 ]

@@ -13,7 +13,7 @@ SIGNUP_VALIDATION_ERROR = {
         "blank": "username can not be blank",
         "invalid": "username must contain only alphanumeric with at least one special character",
         "required": "username_required",
-        "exits": "username_exist"
+        "exits": "username exist"
     },
     'email': {
         "blank": "Email can not be blank",
@@ -32,3 +32,9 @@ SIGNUP_VALIDATION_ERROR = {
     },
 
 }
+
+SIGNIN_VALIDATION_ERROR = {
+    'invalid credentials': "Invalid Credentials"
+}
+
+
