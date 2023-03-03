@@ -37,4 +37,18 @@ SIGNIN_VALIDATION_ERROR = {
     'invalid credentials': "Invalid Credentials"
 }
 
+EMAIL_VALIDATOR_VALIDATION_ERROR = {
+    'email': {
+        "blank": "email can not be blank",
+        "required": "email required",
+        "exits": "email exist"
+    }
+}
 
+USERNAME_VALIDATOR_VALIDATION_ERROR = {
+    'username': {
+        "blank": "username can not be blank",
+        "required": "username required",
+        "exits": "username exist"
+    }
+}

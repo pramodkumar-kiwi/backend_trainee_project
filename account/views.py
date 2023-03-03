@@ -6,7 +6,7 @@ from rest_framework import viewsets, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import SignupSerializer, SigninSerializer
+from .serializers import SignupSerializer, SigninSerializer,UsernameValidatorSerializer, EmailValidatorSerializer
 from .models import User
 
 
@@ -57,3 +57,49 @@ class SigninView(viewsets.ViewSet):
 
             return Response({'access': str(refresh.access_token), 'refresh': str(refresh)})
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+class EmailValidatorView(viewsets.ModelViewSet):
+    """
+    ValidateView class to Validate email at runtime
+    """
+    queryset = User
+    serializer_class = EmailValidatorSerializer
+    http_method_names = ['get', 'post']
+
+    def get_queryset(self):
+        """
+        get queryset of User Model
+        """
+        return User.objects.filter(email="email")
+
+    def get(self, request, *args, **kwargs):
+        """
+        get an instance of user and validate it using serializer class
+        """
+        serializer = self.serializer_class(data=request.GET)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data)
+
+
+class UsernameValidatorView(viewsets.ModelViewSet):
+    """
+    UsernameValidatorView class to Validate username at runtime
+    """
+    queryset = User
+    serializer_class = UsernameValidatorSerializer
+    http_method_names = ['get', 'post']
+
+    def get_queryset(self):
+        """
+        get queryset of User Model
+        """
+        return User.objects.filter(username="username")
+
+    def get(self, request, *args, **kwargs):
+        """
+        get an instance of user and validate it using serializer class
+        """
+        serializer = self.serializer_class(data=request.GET)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data)
+
