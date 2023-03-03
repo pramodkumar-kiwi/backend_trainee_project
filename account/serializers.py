@@ -1,6 +1,6 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-from .messages import SIGNUP_VALIDATION_ERROR, SIGNIN_VALIDATION_ERROR
+from .messages import SIGNUP_VALIDATION_ERROR, SIGNIN_VALIDATION_ERROR, EMAIL_VALIDATOR_VALIDATION_ERROR, USERNAME_VALIDATOR_VALIDATION_ERROR
 from .models import User
 import re
 from .constants import REGEX
@@ -137,3 +137,53 @@ class SigninSerializer(serializers.ModelSerializer):
         """
         model = User
         fields = ['username', 'password']
+
+class EmailValidatorSerializer(serializers.ModelSerializer):
+    """
+    serializer for Validating email at runtime
+    """
+    email = serializers.EmailField(required=True, allow_blank=False,
+                                   error_messages=EMAIL_VALIDATOR_VALIDATION_ERROR['email'])
+
+    def validate_email(self, value):
+        """
+        checks that the email exits
+        :param value: email
+        :return: if exists: return Validation error else return value
+        """
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError(EMAIL_VALIDATOR_VALIDATION_ERROR['email']['exits'])
+        return value
+
+    class Meta:
+        """
+        class Meta for EmailValidatorSerializer
+        """
+        model = User
+        fields = ['email']
+
+
+class UsernameValidatorSerializer(serializers.ModelSerializer):
+    """
+    serializer for Validating username at runtime
+    """
+    username = serializers.CharField(min_length=8, max_length=16, required=True, allow_blank=False,
+                                     trim_whitespace=False,
+                                     error_messages=USERNAME_VALIDATOR_VALIDATION_ERROR['username'])
+
+    def validate_username(self, value):
+        """
+        check that the username already exists or not
+        :param value: username
+        :return: if exists return Validation error ,else return value
+        """
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError(USERNAME_VALIDATOR_VALIDATION_ERROR['username']['exits'])
+        return value
+
+    class Meta:
+        """
+        class Meta for UsernameValidatorSerializer
+        """
+        model = User
+        fields = ['username']
