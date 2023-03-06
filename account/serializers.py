@@ -3,7 +3,8 @@ import re
 from django.conf import settings
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import InvalidToken
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from .messages import SIGNUP_VALIDATION_ERROR, SIGNIN_VALIDATION_ERROR, EMAIL_VALIDATOR_VALIDATION_ERROR, \
     USERNAME_VALIDATOR_VALIDATION_ERROR
 from .models import User
@@ -171,6 +172,25 @@ class SigninSerializer(serializers.ModelSerializer):
         """
         model = User
         fields = ['username', 'password']
+
+
+class SignOutSerializer(serializers.Serializer):
+    refresh = serializers.CharField(max_length=255)
+
+    def validate(self, attrs):
+        self.token = attrs['refresh']
+        return attrs
+
+    def create(self, validated_data):
+        try:
+            token = RefreshToken(self.token)
+            token_type = token.__class__.__name__
+            if token_type != 'RefreshToken':
+                raise InvalidToken('Token has wrong type')
+            token.blacklist()
+            return {'success': True}
+        except (InvalidToken, TokenError) as e:
+            raise serializers.ValidationError(str(e))
 
 
 class EmailValidatorSerializer(serializers.ModelSerializer):

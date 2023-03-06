@@ -4,9 +4,10 @@ view for SignupView
 """
 from rest_framework import viewsets
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .serializers import SignupSerializer, SigninSerializer, UsernameValidatorSerializer,\
-                    EmailValidatorSerializer
+                    EmailValidatorSerializer, SignOutSerializer
 from .models import User
 
 
@@ -45,6 +46,17 @@ class SigninView(viewsets.ModelViewSet):
             data = serializer.create(serializer.validated_data)
             return Response(data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SignOutView(viewsets.ViewSet):
+    serializer_class = SignOutSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.create(serializer.validated_data)
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class EmailValidatorView(viewsets.ModelViewSet):
