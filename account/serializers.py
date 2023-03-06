@@ -1,11 +1,13 @@
+import os
+import re
+from django.conf import settings
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-from .messages import SIGNUP_VALIDATION_ERROR, SIGNIN_VALIDATION_ERROR, EMAIL_VALIDATOR_VALIDATION_ERROR, USERNAME_VALIDATOR_VALIDATION_ERROR
+from rest_framework_simplejwt.tokens import RefreshToken
+from .messages import SIGNUP_VALIDATION_ERROR, SIGNIN_VALIDATION_ERROR, EMAIL_VALIDATOR_VALIDATION_ERROR, \
+    USERNAME_VALIDATOR_VALIDATION_ERROR
 from .models import User
-import re
-from .constants import REGEX
-from django.conf import settings
-import os
+from .constants import REGEX, MAX_LENGTH, MIN_LENGTH
 
 
 class SignupSerializer(serializers.ModelSerializer):
@@ -105,31 +107,32 @@ class SignupSerializer(serializers.ModelSerializer):
         class Meta for SignupSerializer
         """
         model = User
-        fields = ['first_name', 'last_name', 'username', 'email', 'contact', 'password']
+        fields = ['first_name', 'last_name', 'username',
+                  'email', 'contact', 'password']
 
 
 class SigninSerializer(serializers.ModelSerializer):
     """
-        Define a serializer for a signin view in Django
+    Define a serializer for a signin view in Django
     """
     username = serializers.CharField(min_length=8, max_length=16, required=True, allow_blank=False,
                                      trim_whitespace=False)
     password = serializers.CharField(max_length=20, min_length=8, write_only=True, required=True,
                                      trim_whitespace=False)
 
-    def validate(self, data):
+    def validate(self, attrs):
         """
             Validate if username or password is incorrect.
         """
-        username = data.get('username')
-        password = data.get('password')
+        username = attrs.get('username')
+        password = attrs.get('password')
 
         user = authenticate(username=username, password=password)
         if not user:
             raise serializers.ValidationError(SIGNIN_VALIDATION_ERROR['Invalid Credentials'])
 
-        data['user'] = user
-        return data
+        attrs['user'] = user
+        return attrs
 
     class Meta:
         """

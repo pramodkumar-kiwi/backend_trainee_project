@@ -36,6 +36,6 @@ schema_view = get_schema_view(
 
 urlpatterns = [
                   path('admin/', admin.site.urls),
-                  path('user/', include('account.urls')),
-                  path('', schema_view.with_ui('swagger', cache_timeout=0), name='swagger'),
+                  path('apidoc/user/', include('account.urls')),
+                  path('apidoc/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger'),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
