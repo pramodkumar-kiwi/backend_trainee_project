@@ -23,7 +23,7 @@ from django.conf.urls.static import static
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Galleria",
+        title="Project Galleria",
         default_version='Galleria',
         description="This Api is created to provide gallery images and videos for the authenticated user.",
         terms_of_service="https://www.google.com/policies/terms/",
@@ -36,6 +36,6 @@ schema_view = get_schema_view(
 
 urlpatterns = [
                   path('admin/', admin.site.urls),
-                  path('user/', include('account.urls')),
-                  path('', schema_view.with_ui('swagger', cache_timeout=0), name='swagger'),
+                  path('apidoc/user/', include('account.urls')),
+                  path('apidoc/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger'),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

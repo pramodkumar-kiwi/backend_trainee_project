@@ -2,11 +2,11 @@
 view for SignupView
 
 """
-from rest_framework import viewsets, permissions
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import SignupSerializer, SigninSerializer,UsernameValidatorSerializer, EmailValidatorSerializer
+from .serializers import SignupSerializer, SigninSerializer, UsernameValidatorSerializer,\
+                    EmailValidatorSerializer
 from .models import User
 
 
@@ -18,45 +18,34 @@ class SignupView(viewsets.ModelViewSet):
     serializer_class = SignupSerializer
     http_method_names = ['post']
 
-    def get_queryset(self):
-        """
-        Get the queryset of User Model
-        """
-        return User.objects.filter()
-
     def create(self, request, *args, **kwargs):
         """
         creates a new requested user
         """
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.create(serializer.validated_data)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class SigninView(viewsets.ViewSet):
+class SigninView(viewsets.ModelViewSet):
     """
     Allow only authenticated user to signin.
     If the user is valid provide him the access and refresh token
     and save it to the database.
     """
-    permission_classes = [permissions.AllowAny]
+    queryset = User.objects.filter()
     serializer_class = SigninSerializer
+    http_method_names = ['post']
 
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            user = serializer.validated_data['user']
+            data = serializer.create(serializer.validated_data)
+            return Response(data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            refresh = RefreshToken.for_user(user)
-
-            user_token = User.objects.get(id=user.id)
-            user_token.token = str(refresh.access_token)
-            user_token.save()
-
-            return Response({'access': str(refresh.access_token), 'refresh': str(refresh)})
-        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 class EmailValidatorView(viewsets.ModelViewSet):
     """
@@ -72,20 +61,21 @@ class EmailValidatorView(viewsets.ModelViewSet):
         """
         return User.objects.filter(email="email")
 
-    def get(self, request, *args, **kwargs):
+    def retrieve(self, request, *args, **kwargs):
         """
         get an instance of user and validate it using serializer class
         """
         serializer = self.serializer_class(data=request.GET)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data)
+        if serializer.is_valid(raise_exception=True):
+            return Response(serializer.validated_data, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class UsernameValidatorView(viewsets.ModelViewSet):
     """
     UsernameValidatorView class to Validate username at runtime
     """
-    queryset = User
+    queryset = User.objects.filter(username="username")
     serializer_class = UsernameValidatorSerializer
     http_method_names = ['get', 'post']
 
@@ -95,11 +85,11 @@ class UsernameValidatorView(viewsets.ModelViewSet):
         """
         return User.objects.filter(username="username")
 
-    def get(self, request, *args, **kwargs):
+    def retrieve(self, request, *args, **kwargs):
         """
         get an instance of user and validate it using serializer class
         """
         serializer = self.serializer_class(data=request.GET)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data)
-
+        if serializer.is_valid(raise_exception=True):
+            return Response(serializer.validated_data, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
