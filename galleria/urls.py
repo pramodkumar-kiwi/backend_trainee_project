@@ -23,7 +23,7 @@ from django.conf.urls.static import static
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Galleria",
+        title="Project Galleria",
         default_version='Galleria',
         description="This Api is created to provide gallery images and videos for the authenticated user.",
         terms_of_service="https://www.google.com/policies/terms/",
