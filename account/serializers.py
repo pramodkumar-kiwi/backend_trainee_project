@@ -1,5 +1,7 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
+
+from image.serializers import ImageGallerySerializer
 from .messages import SIGNUP_VALIDATION_ERROR, SIGNIN_VALIDATION_ERROR, EMAIL_VALIDATOR_VALIDATION_ERROR, \
     USERNAME_VALIDATOR_VALIDATION_ERROR
 from .models import User
@@ -13,6 +15,7 @@ class SignupSerializer(serializers.ModelSerializer):
     """
     serializer for Registering requested user
     """
+    image_gallery_user_set = ImageGallerySerializer(many=True, read_only=True)
     first_name = serializers.CharField(max_length=20, required=True, allow_blank=False, trim_whitespace=True,
                                        error_messages=SIGNUP_VALIDATION_ERROR['first_name'])
     last_name = serializers.CharField(max_length=20, required=True, allow_blank=False, trim_whitespace=False,
@@ -94,7 +97,7 @@ class SignupSerializer(serializers.ModelSerializer):
         class Meta for SignupSerializer
         """
         model = User
-        fields = ['first_name', 'last_name', 'username', 'email', 'contact', 'password']
+        fields = ['first_name', 'last_name', 'username', 'email', 'contact', 'password', 'image_gallery_user_set']
 
 
 class SigninSerializer(serializers.ModelSerializer):
@@ -115,7 +118,7 @@ class SigninSerializer(serializers.ModelSerializer):
 
         user = authenticate(username=username, password=password)
         if not user:
-            raise serializers.ValidationError(SIGNIN_VALIDATION_ERROR['Invalid Credentials'])
+            raise serializers.ValidationError(SIGNIN_VALIDATION_ERROR['invalid credentials'])
 
         data['user'] = user
         return data

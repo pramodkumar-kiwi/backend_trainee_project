@@ -17,6 +17,7 @@ class ImageGallery(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    @property
     def __str__(self):
         return self.gallery_name
 
@@ -33,14 +34,18 @@ class Image(models.Model):
     The Image model with image name and foreign key to ImageGallery model
      representing the gallery in which image is uploaded.
     """
+
+    def image_upload_path(self, filename):
+        return f'{self.image_gallery.user.username}/image/{self.image_gallery.gallery_name}/{filename}'
+
     image_gallery = models.ForeignKey(ImageGallery, on_delete=models.CASCADE,
                                       related_name='image_gallery_set')
-    image = models.ImageField(upload_to='media/', null=True)
+    image = models.ImageField(upload_to=image_upload_path, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.image
+        return str(self.image)
 
     class Meta:
         """

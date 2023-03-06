@@ -1,24 +1,24 @@
 SIGNUP_VALIDATION_ERROR = {
     'first_name': {
-        "blank": "first_name can not be blank",
-        "invalid": "first_name must contain only alphabets",
-        "required": "first_name required",
+        "blank": "first name can not be blank",
+        "invalid": "first name must contain only alphabets",
+        "required": "first name required",
     },
     'last_name': {
-        "blank": "last_name can not be blank",
-        "invalid": "last_name must contains only alphabets",
-        "required": "last_name required",
+        "blank": "last name can not be blank",
+        "invalid": "last name must contains only alphabets",
+        "required": "last name required",
     },
     'username': {
         "blank": "username can not be blank",
         "invalid": "username must contain alphabet, digit and special character",
-        "required": "username_required",
+        "required": "username required",
         "exits": "username exist"
     },
     'email': {
         "blank": "Email can not be blank",
         "required": "Email required",
-        "exits": "email_exist"
+        "exits": "email exist"
     },
     'contact': {
         "blank": "contact can not be blank",

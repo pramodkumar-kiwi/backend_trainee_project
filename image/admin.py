@@ -1,5 +1,5 @@
 """
-This module defines two Django admin `ImageGalleryAdmin` and 'ImageAdmin' representing
+This file defines two Django admin `ImageGalleryAdmin` and 'ImageAdmin' representing
 ImageGallery and Image.
 These are associated with their respective models ImageGallery and Image.
 """
