@@ -42,8 +42,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'account',
-    'image',
-    'video',
+    'gallery'
 ]
 
 MIDDLEWARE = [
