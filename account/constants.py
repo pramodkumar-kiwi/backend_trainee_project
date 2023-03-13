@@ -25,3 +25,5 @@ MIN_LENGTH = {
     'password': 8,
     'contact': 10,
 }
+
+DIRECTORY_PATH = 'media/'
