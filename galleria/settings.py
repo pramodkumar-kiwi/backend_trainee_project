@@ -120,11 +120,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
@@ -183,18 +183,20 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
+
 SWAGGER_SETTINGS = {
     'DEFAULT_INFO': 'backend_trainee_project.urls.apidoc',
     'url': 'https://a9ad-111-93-193-70.in.ngrok.io/swagger.json',
     'SECURITY_DEFINITIONS': {
-        'basic': {
-            'type': 'basic'
-        },
-        'token': {
+        'Bearer': {
             'type': 'apiKey',
-            'name': 'AccessToken',
+            'name': 'Authorization',
             'in': 'header',
-        },
+            'description': 'JWT Authorization header using the Bearer scheme. Example: "Bearer {token}"'
+        }
+    },
+    'SECURITY': {
+        'Bearer': []
     }
 }
 
