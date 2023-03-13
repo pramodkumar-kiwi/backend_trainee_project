@@ -201,7 +201,7 @@ class SignOutSerializer(serializers.Serializer):
             token = RefreshToken(attrs['refresh'])
             token_type = token.__class__.__name__
             if token_type != 'RefreshToken':
-                raise InvalidToken('Invalid token')
+                raise serializers.ValidationError(TOKEN_ERROR['Invalid'])
             attrs['refresh_token'] = token
         except (InvalidToken, TokenError) as e:
             raise serializers.ValidationError(str(e))

@@ -1,9 +1,10 @@
 """
-This module defines Django models `ImageGallery` and 'Image' representing gallery and image .
+This file defines Django models `ImageGallery` and 'Image' representing gallery and image .
 This model is associated with its respective database table specified in its `Meta` class.
 """
 from django.db import models
 from account.models import User
+from image.utils import image_upload_path
 
 
 class ImageGallery(models.Model):
@@ -16,10 +17,12 @@ class ImageGallery(models.Model):
                              related_name='image_gallery_user_set')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    objects = models.Manager()
 
     def __str__(self):
-        return self.gallery_name
+        return str(self.gallery_name)
 
+    # pylint: disable=too-few-public-methods
     class Meta:
         """
         Use the Meta class to specify the database table
@@ -31,17 +34,19 @@ class ImageGallery(models.Model):
 class Image(models.Model):
     """
     The Image model with image name and foreign key to ImageGallery model
-     representing the gallery in which image is uploaded.
+    representing the gallery in which image is uploaded.
     """
     image_gallery = models.ForeignKey(ImageGallery, on_delete=models.CASCADE,
                                       related_name='image_gallery_set')
-    image = models.ImageField(upload_to='media/', null=True)
+    image = models.ImageField(upload_to=image_upload_path, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    objects = models.Manager()
 
     def __str__(self):
-        return self.image
+        return str(self.image)
 
+    # pylint: disable=too-few-public-methods
     class Meta:
         """
         Use the Meta class to specify the database table
