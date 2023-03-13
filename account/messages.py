@@ -63,3 +63,15 @@ USERNAME_VALIDATOR_VALIDATION_ERROR = {
         "exits": "username exist"
     }
 }
+
+TOKEN_ERROR = {
+    'Invalid': "Invalid Token",
+}
+
+SUCCESS_MESSAGE = {
+    'success': "Updated Successfully"
+}
+
+ERROR_MESSAGE = {
+    'error': "Update Failed"
+}

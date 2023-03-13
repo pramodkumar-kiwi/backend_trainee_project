@@ -10,11 +10,13 @@ router = DefaultRouter()
 """
 Routing for Signup and Signin
 """
-router.register('Signup', views.SignupView, basename='signup')
-router.register('Signin', views.SigninView, basename='signin')
-router.register('SignOut', views.SignOutView, basename='SignOut')
-router.register('EmailValidator', views.EmailValidatorView, basename='EmailValidator')
-router.register('UsernameValidator', views.UsernameValidatorView, basename='UsernameValidator')
+router.register('signup', views.SignupView, basename='signup')
+router.register('signin', views.SigninView, basename='signin')
+router.register('sign-out', views.SignOutView, basename='sign-out')
+router.register('emailvalidator', views.EmailValidatorView, basename='emailvalidator')
+router.register('username-validator', views.UsernameValidatorView, basename='username-validator')
+router.register('userprofile', views.UserProfileView, basename='userprofile')
+
 urlpatterns = [
     path('', include(router.urls)),
 ]
