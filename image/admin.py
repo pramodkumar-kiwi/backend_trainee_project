@@ -1,10 +1,10 @@
 """
-This module defines two Django admin `ImageGalleryAdmin` and 'ImageAdmin' representing
+This file defines two Django admin `ImageGalleryAdmin` and 'ImageAdmin' representing
 ImageGallery and Image.
 These are associated with their respective models ImageGallery and Image.
 """
 from django.contrib import admin
-from image.models import ImageGallery, Image
+from .models import ImageGallery, Image
 
 
 @admin.register(ImageGallery)
@@ -21,4 +21,3 @@ class ImageAdmin(admin.ModelAdmin):
     Class ImageGalleryAdmin display all the fields of ImageGallery model in admin panel
     """
     list_display = ('id', 'image', 'created_at', 'updated_at')
-
