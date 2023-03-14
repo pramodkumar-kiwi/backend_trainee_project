@@ -70,9 +70,10 @@ class ImageGalleryCreateSerializer(serializers.ModelSerializer):
         min_length=MIN_LENGTH['image_gallery_name'], max_length=MAX_LENGTH['image_gallery_name'],
         required=True, error_messages=VALIDATION['image_gallery_name'])
 
-    def validate_gallery_name(self, value):
+    @staticmethod
+    def validate_gallery_name(value):
         """
-        Validator function to check if a image gallery with the given name already exists
+        Validator function to check if an image gallery with the given name already exists
         """
         if ImageGallery.objects.filter(gallery_name=value).exists():
             raise serializers.ValidationError(VALIDATION['image_gallery_name']['exists'])
@@ -168,7 +169,8 @@ class VideoGalleryCreateSerializer(serializers.ModelSerializer):
         min_length=MIN_LENGTH['video_gallery_name'], max_length=MAX_LENGTH['video_gallery_name'],
         required=True, error_messages=VALIDATION['video_gallery_name'])
 
-    def validate_gallery_name(self, value):
+    @staticmethod
+    def validate_gallery_name(value):
         """
         Validator function to check if a video gallery with the given name already exists
         """
@@ -285,7 +287,8 @@ class ImageCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(VALIDATION['image_gallery_set']['max_limit'])
         return attrs
 
-    def validate_image(self, value):
+    @staticmethod
+    def validate_image(value):
         """
         This function validates the size of the uploaded image and
         raises a validation error if it exceeds the maximum size limit specified in MAX_SIZE
@@ -327,6 +330,7 @@ class VideoCreateSerializer(serializers.ModelSerializer):
     video = serializers.FileField(required=True, error_messages=VALIDATION['video'])
     video_gallery_id = serializers.IntegerField(
         required=True, error_messages=VALIDATION['video_gallery_id'])
+
     def validate(self, attrs):
         """
         Validation to check user cannot
@@ -342,7 +346,8 @@ class VideoCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(VALIDATION['video_gallery_set']['max_limit'])
         return attrs
 
-    def validate_video(self, value):
+    @staticmethod
+    def validate_video(value):
         """
         validate a user to upload only video format file
         :param value: video

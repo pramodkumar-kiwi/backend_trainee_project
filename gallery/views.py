@@ -10,7 +10,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.response import Response
-from .constants import folder_name
+from .constants import folder_name, media_name, gallery_field_name
 from .messages import SUCCESS_MESSAGES
 from .models import ImageGallery, VideoGallery, Image, Video
 from .serializers import ImageGallerySerializer, ImageGalleryCreateSerializer, \
@@ -34,7 +34,7 @@ class BaseGalleryViewSet(viewsets.ModelViewSet):
         """
          Get the queryset of current Gallery
         """
-        user = self.request.user
+        user = self.request.user.id
         return self.queryset.objects.filter(user=user).order_by('id')
 
     def list(self, request, *args, **kwargs):
@@ -81,7 +81,7 @@ class BaseGalleryViewSet(viewsets.ModelViewSet):
          Delete an instance of Gallery
         """
         instance = self.get_object()
-        user = request.user
+        user = request.user.id
         folder_path = f"media/{user.username}/{self.folder_name}/{instance.gallery_name}"
         if os.path.exists(folder_path):
             shutil.rmtree(folder_path)
@@ -204,8 +204,8 @@ class ImageViewSet(BaseMediaViewSet):
     queryset = Image
     serializer_class = ImageSerializer
     create_serializer_class = ImageCreateSerializer
-    media_name = 'image'
-    gallery_field_name = 'image_gallery'
+    media_name = media_name['IMAGE_media']
+    gallery_field_name = gallery_field_name['Image_gallery_field']
     create_success_message = SUCCESS_MESSAGES["IMAGE"]["CREATED_SUCCESSFULLY"]
     delete_success_message = SUCCESS_MESSAGES["IMAGE"]["DELETED_SUCCESSFULLY"]
 
@@ -213,7 +213,7 @@ class ImageViewSet(BaseMediaViewSet):
         """
          Get the queryset of Image Model
         """
-        user = self.request.user
+        user = self.request.user.id
         return self.queryset.objects.filter(image_gallery__user=user).order_by('id')
 
 
@@ -224,8 +224,8 @@ class VideoViewSet(BaseMediaViewSet):
     queryset = Video
     serializer_class = VideoSerializer
     create_serializer_class = VideoCreateSerializer
-    media_name = 'video'
-    gallery_field_name = 'video_gallery'
+    media_name = media_name['VIDEO_media']
+    gallery_field_name = gallery_field_name['Video_gallery_field']
     create_success_message = SUCCESS_MESSAGES["VIDEO"]["CREATED_SUCCESSFULLY"]
     delete_success_message = SUCCESS_MESSAGES["VIDEO"]["DELETED_SUCCESSFULLY"]
 
@@ -233,5 +233,5 @@ class VideoViewSet(BaseMediaViewSet):
         """
          Get the queryset of Video Model
         """
-        user = self.request.user
+        user = self.request.user.id
         return self.queryset.objects.filter(video_gallery__user=user).order_by('id')

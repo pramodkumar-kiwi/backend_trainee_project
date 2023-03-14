@@ -16,6 +16,7 @@ class ImageGallery(models.Model):
                              related_name='image_gallery_user_set')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    objects = models.Manager()
 
     def __str__(self):
         return str(self.gallery_name)
@@ -38,6 +39,7 @@ class Image(models.Model):
     image = models.ImageField(upload_to=image_upload_path, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    objects = models.Manager()
 
     def __str__(self):
         return str(self.image)
@@ -59,6 +61,7 @@ class VideoGallery(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='video_gallery_user_set')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    objects = models.Manager()
 
     def __str__(self):
         return str(self.gallery_name)
@@ -78,12 +81,13 @@ class Video(models.Model):
     """
 
     video_gallery = models.ForeignKey(
-                    VideoGallery,
-                    on_delete=models.CASCADE,
-                    related_name='video_gallery_set')
+        VideoGallery,
+        on_delete=models.CASCADE,
+        related_name='video_gallery_set')
     video = models.FileField(upload_to=video_upload_path, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    objects = models.Manager()
 
     def __str__(self):
         return str(self.video)
