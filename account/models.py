@@ -24,13 +24,12 @@ class User(AbstractUser):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.username
+        return str(self.username)
 
+    # pylint: disable=too-few-public-methods
     class Meta:
         """
         Use the Meta class to specify the database table
         for User model
         """
         db_table = 'User'
-
-

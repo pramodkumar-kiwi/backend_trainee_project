@@ -327,6 +327,20 @@ class VideoCreateSerializer(serializers.ModelSerializer):
     video = serializers.FileField(required=True, error_messages=VALIDATION['video'])
     video_gallery_id = serializers.IntegerField(
         required=True, error_messages=VALIDATION['video_gallery_id'])
+    def validate(self, attrs):
+        """
+        Validation to check user cannot
+        upload more than 10 videos in a single gallery
+        :param attrs: video_gallery
+        :return: if valid return value ,else return Validation error
+        """
+        video_gallery_id = attrs.get('video_gallery_id')
+        user = self.context['request'].user
+        if video_gallery_id:
+            gallery = get_object_or_404(VideoGallery, id=video_gallery_id, user=user)
+            if gallery.video_gallery_set.count() >= 10:
+                raise serializers.ValidationError(VALIDATION['video_gallery_set']['max_limit'])
+        return attrs
 
     def validate_video(self, value):
         """

@@ -8,6 +8,7 @@ import shutil
 from rest_framework import viewsets, status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.response import Response
 from .constants import folder_name
 from .messages import SUCCESS_MESSAGES
@@ -24,8 +25,9 @@ class BaseGalleryViewSet(viewsets.ModelViewSet):
     'ImageGalleryViewSet' and 'VideoGalleryViewSet'
     """
     queryset = None
-    http_method_names = ['get', 'post', 'put', 'delete']
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'post', 'put', 'delete']
     folder_name = None
 
     def get_queryset(self):
@@ -138,6 +140,7 @@ class BaseMediaViewSet(viewsets.ModelViewSet):
     """
     http_method_names = ['get', 'post', 'delete']
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
     parser_classes = [MultiPartParser, FormParser]
     create_serializer_class = None
     serializer_class = None
