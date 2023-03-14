@@ -6,10 +6,14 @@ VALIDATION = {
     'image_gallery_name': {
         "blank": "Image Gallery name can not be blank",
         "required": "Please provide a name to image gallery",
+        "exists": "Image Gallery with this name already exists",
+        "exists_while_updating": "A image gallery with this name already exists for the current user."
     },
     'video_gallery_name': {
         "blank": "Video Gallery name can not be blank",
         "required": "Please provide a name to video gallery",
+        "exists": "Video Gallery with this name already exists",
+        "exists_while_updating": "A video gallery with this name already exists for the current user."
     },
 
     'image': {
@@ -17,6 +21,7 @@ VALIDATION = {
     },
     'video': {
         "required": "Please provide a video",
+        "video-format": "Only MP4 video files are supported"
     },
     'image_gallery_id': {
         "required": "Please provide a image gallery id",

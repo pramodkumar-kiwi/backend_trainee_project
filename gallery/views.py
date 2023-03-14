@@ -5,11 +5,11 @@ and 'VideoGalleryViewSet'
 """
 import os
 import shutil
-
 from rest_framework import viewsets, status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from .constants import folder_name
 from .messages import SUCCESS_MESSAGES
 from .models import ImageGallery, VideoGallery, Image, Video
 from .serializers import ImageGallerySerializer, ImageGalleryCreateSerializer, \
@@ -20,20 +20,20 @@ from .serializers import ImageGallerySerializer, ImageGalleryCreateSerializer, \
 
 class BaseGalleryViewSet(viewsets.ModelViewSet):
     """
-    class BaseGalleryViewSet handles CRUD operations for 'ImageGalleryViewSet' and 'VideoGalleryViewSet'
+    class BaseGalleryViewSet handles CRUD operations for
+    'ImageGalleryViewSet' and 'VideoGalleryViewSet'
     """
-
+    queryset = None
     http_method_names = ['get', 'post', 'put', 'delete']
-    model = None
-
     permission_classes = [IsAuthenticated]
+    folder_name = None
 
     def get_queryset(self):
         """
          Get the queryset of current Gallery
         """
         user = self.request.user
-        return self.model.objects.filter(user=user).order_by('id')
+        return self.queryset.objects.filter(user=user).order_by('id')
 
     def list(self, request, *args, **kwargs):
         """
@@ -91,11 +91,11 @@ class ImageGalleryViewSet(BaseGalleryViewSet):
     """
     class ImageGalleryViewSet for handling CRUD for ImageGallery
     """
-    model = ImageGallery
+    queryset = ImageGallery
     serializer_class = ImageGallerySerializer
     create_serializer_class = ImageGalleryCreateSerializer
     update_serializer_class = ImageGalleryUpdateSerializer
-    folder_name = 'image'
+    folder_name = folder_name['IMAGE_folder_name']
 
     def get_serializer_class(self):
         """
@@ -113,11 +113,11 @@ class VideoGalleryViewSet(BaseGalleryViewSet):
     """
     class VideoGalleryViewSet for handling CRUD for VideoGallery
     """
-    model = VideoGallery
+    queryset = VideoGallery
     serializer_class = VideoGallerySerializer
     create_serializer_class = VideoGalleryCreateSerializer
     update_serializer_class = VideoGalleryUpdateSerializer
-    folder_name = 'video'
+    folder_name = folder_name['VIDEO_folder_name']
 
     def get_serializer_class(self):
         """
@@ -133,12 +133,12 @@ class VideoGalleryViewSet(BaseGalleryViewSet):
 
 class BaseMediaViewSet(viewsets.ModelViewSet):
     """
-    class BaseMediaViewSet for Create,Read and Delete operations for 'ImageViewSet' and 'VideoViewSet'
+    class BaseMediaViewSet for Create,Read and Delete
+    operations for 'ImageViewSet' and 'VideoViewSet'
     """
     http_method_names = ['get', 'post', 'delete']
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
-    model = None
     create_serializer_class = None
     serializer_class = None
     media_name = None
@@ -148,7 +148,8 @@ class BaseMediaViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         """
-        Get the Serializer Class as create_serializer_class or serializer_class as per required action
+        Get the Serializer Class as create_serializer_class
+        or serializer_class as per required action
         """
         if self.action == 'create':
             return self.create_serializer_class
@@ -197,9 +198,8 @@ class ImageViewSet(BaseMediaViewSet):
     """
     class ImageViewSet for Create,Read and Delete operations for 'ImageViewSet'
     """
-    queryset = Image.objects.all()
+    queryset = Image
     serializer_class = ImageSerializer
-    model = Image
     create_serializer_class = ImageCreateSerializer
     media_name = 'image'
     gallery_field_name = 'image_gallery'
@@ -211,16 +211,15 @@ class ImageViewSet(BaseMediaViewSet):
          Get the queryset of Image Model
         """
         user = self.request.user
-        return self.model.objects.filter(image_gallery__user=user).order_by('id')
+        return self.queryset.objects.filter(image_gallery__user=user).order_by('id')
 
 
 class VideoViewSet(BaseMediaViewSet):
     """
     class ImageViewSet for Create,Read and Delete operations for 'VideoViewSet'
     """
-    queryset = Video.objects.all()
+    queryset = Video
     serializer_class = VideoSerializer
-    model = Video
     create_serializer_class = VideoCreateSerializer
     media_name = 'video'
     gallery_field_name = 'video_gallery'
@@ -232,4 +231,4 @@ class VideoViewSet(BaseMediaViewSet):
          Get the queryset of Video Model
         """
         user = self.request.user
-        return self.model.objects.filter(video_gallery__user=user).order_by('id')
+        return self.queryset.objects.filter(video_gallery__user=user).order_by('id')

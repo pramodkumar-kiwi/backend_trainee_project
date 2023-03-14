@@ -155,6 +155,12 @@ class EmailValidatorSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(EMAIL_VALIDATOR_VALIDATION_ERROR['email']['exits'])
         return value
 
+    def create(self, validated_data):
+        """
+        Override create method to do nothing
+        """
+        return User()
+
     class Meta:
         """
         class Meta for EmailValidatorSerializer

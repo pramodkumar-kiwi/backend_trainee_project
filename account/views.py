@@ -64,7 +64,7 @@ class EmailValidatorView(viewsets.ModelViewSet):
     """
     queryset = User
     serializer_class = EmailValidatorSerializer
-    http_method_names = ['get', 'post']
+    http_method_names = ['post',' get']
 
     def get_queryset(self):
         """
