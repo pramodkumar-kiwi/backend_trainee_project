@@ -107,20 +107,13 @@ class ImageCreateSerializer(serializers.ModelSerializer):
         images = []
 
         for image in validated_data['image']:
-            # Generate a unique filename for the uploaded image
             image_name = generate_unique_image(user, image_gallery, validated_data)
             image.name = str(image_name)
-
-            # Create a new Image instance for the current image file
             image_instance = Image(
                 image_gallery=image_gallery,
                 image=image,
             )
-
-            # Append the newly created Image instance to the list
             images.append(image_instance)
-
-        # Bulk create all the Image instances
         Image.objects.bulk_create(images)
         return images
 
@@ -202,7 +195,7 @@ class ImageGalleryCreateSerializer(serializers.ModelSerializer):
         that the ImageGalleryCreateSerializer should work with
         """
         model = ImageGallery
-        fields = ['id', 'gallery_name','created_at', 'updated_at']
+        fields = ['id', 'gallery_name', 'created_at', 'updated_at']
 
 
 class ImageGalleryUpdateSerializer(serializers.ModelSerializer):
