@@ -25,7 +25,8 @@ schema_view = get_schema_view(
     openapi.Info(
         title="Project Galleria",
         default_version='Galleria',
-        description="This Api is created to provide gallery images and videos for the authenticated user.",
+        description="This Api is created to provide gallery images "
+                    "and videos for the authenticated user.",
         terms_of_service="https://www.google.com/policies/terms/",
         contact=openapi.Contact(email="contact@snippets.local"),
         license=openapi.License(name="BSD License"),
@@ -34,9 +35,10 @@ schema_view = get_schema_view(
     permission_classes=[permissions.AllowAny],
 )
 
+
 urlpatterns = [
                   path('admin/', admin.site.urls),
                   path('user/', include('account.urls')),
-                  path('image/', include('image.urls')),
+                  path('gallery/', include('gallery.urls')),
                   path('apidoc/', schema_view.with_ui('swagger', cache_timeout=0), name='swagger'),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
