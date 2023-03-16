@@ -12,11 +12,9 @@ from gallery import views
 router = DefaultRouter()
 
 """
-Routing for image-gallery,video-gallery,image and video
+Routing for video-gallery and video
 """
-router.register('image-gallery', views.ImageGalleryViewSet, basename='image-gallery')
 router.register('video-gallery', views.VideoGalleryViewSet, basename='video-gallery')
-router.register('image', views.ImageViewSet, basename='image')
 router.register('video', views.VideoViewSet, basename='video')
 
 urlpatterns = [

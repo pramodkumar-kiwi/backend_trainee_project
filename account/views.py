@@ -89,9 +89,10 @@ class EmailValidatorView(viewsets.ModelViewSet):
         get an instance of user and validate it using serializer class
         """
         serializer = self.serializer_class(data=request.GET)
-        if serializer.is_valid(raise_exception=True):
-            return Response(serializer.validated_data, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        if serializer.is_valid():
+            serializer.create(serializer.validated_data)
+            return Response(status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UsernameValidatorView(viewsets.ModelViewSet):

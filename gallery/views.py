@@ -10,228 +10,208 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.response import Response
-from .constants import folder_name, media_name, gallery_field_name
+from .constants import MEDIA_URL, VIDEO_URL_TEMPLATE, \
+    VIDEO_PATH_TEMPLATE, VIDEO_GALLERY_PATH
 from .messages import SUCCESS_MESSAGES
-from .models import ImageGallery, VideoGallery, Image, Video
-from .serializers import ImageGallerySerializer, ImageGalleryCreateSerializer, \
-    ImageGalleryUpdateSerializer, VideoGallerySerializer, \
+from .models import VideoGallery, Video
+from .serializers import VideoGallerySerializer, \
     VideoGalleryCreateSerializer, VideoGalleryUpdateSerializer, \
-    ImageSerializer, ImageCreateSerializer, VideoSerializer, VideoCreateSerializer
+    VideoSerializer, VideoCreateSerializer
 
 
-class BaseGalleryViewSet(viewsets.ModelViewSet):
+class VideoGalleryViewSet(viewsets.ModelViewSet):
     """
-    class BaseGalleryViewSet handles CRUD operations for
-    'ImageGalleryViewSet' and 'VideoGalleryViewSet'
+    The VideoGalleryViewSet handles CRUD operations for the VideoGallery model,
+    with authentication required for all actions.
+    It provides a serializer class for each action and
+    filters queryset based on the authenticated user.
     """
-    queryset = None
+    queryset = VideoGallery
+    http_method_names = ['get', 'post', 'put', 'delete']
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    http_method_names = ['get', 'post', 'put', 'delete']
-    folder_name = None
+
+    def get_serializer_class(self):
+        """
+        The get_serializer_class returns a serializer class based on the action being performed.
+        For 'create' action, it returns VideoGalleryCreateSerializer,
+        for 'update' action, it returns VideoGalleryUpdateSerializer,
+        and for all other actions, it returns the default serializer, VideoGallerySerializer.
+        :return:serializer class
+        """
+        if self.action == 'create':
+            return VideoGalleryCreateSerializer
+        if self.action == 'update':
+            return VideoGalleryUpdateSerializer
+        return VideoGallerySerializer
 
     def get_queryset(self):
         """
-         Get the queryset of current Gallery
+        The get_queryset method returns a queryset of VideoGallery Model objects
+        filtered based on the authenticated user.
+        It orders the queryset based on the ID of the objects.
+        :return: Video Gallery objects
         """
-        user = self.request.user.id
-        return self.queryset.objects.filter(user=user).order_by('id')
+        user = self.request.user
+        return VideoGallery.objects.filter(user=user).order_by('id')
 
     def list(self, request, *args, **kwargs):
         """
-        list all data for current Gallery
+        The list retrieves all instances of the VideoGallery model.
+        serializes them using the serializer returned by the get_serializer() method,
+        and returns the serialized data in a Response object with a status code of 200 (OK).
+        :return: Video Gallery instances
         """
         serializer = self.get_serializer(self.get_queryset(), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
         """
-        retrieves an instance of current Gallery
+        This method retrieves a single instance of the VideoGallery model
+        using the provided primary key (pk).
+        It then serializes the instance using the serializer defined for the view and
+        returns the serialized data in a Response object with a status code of 200 (OK).
+        :return: Single Video Gallery instance
         """
         serializer = self.get_serializer(self.get_object())
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
         """
-        create new instance for current Gallery
+        This method creates a new instance of the VideoGallery model using validated serializer data
+        If the data is valid, it creates a new instance and
+        returns a success response with a status code of 201.
+        If the data is invalid, it returns an error response with a status code of 400.
+        :return: response object
         """
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             serializer.create(serializer.validated_data)
-            return Response({'message': SUCCESS_MESSAGES['BASE_GALLERY']['CREATED_SUCCESSFULLY'],
+            return Response({'message': SUCCESS_MESSAGES['VIDEO_GALLERY']['CREATED_SUCCESSFULLY'],
                              'data': serializer.data},
                             status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, *args, **kwargs):
         """
-        Updates the instance of Gallery with its new values
+        This method creates a new instance of the VideoGallery model using validated serializer data
+        and the primary key of the instance to be updated.
+        If the update is successful,it updates an existing instance and
+        returns a success response with a status code of 201.
+        If the update is unsuccessful it returns an error response with a status code of 400.
+        :return: response object
         """
-        gal = self.get_object()
-        serializer = self.get_serializer(gal, data=request.data)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
         if serializer.is_valid():
-            serializer.update(gal, serializer.validated_data)
-            return Response({'message': SUCCESS_MESSAGES['BASE_GALLERY']['UPDATED_SUCCESSFULLY'],
-                             'data': serializer.data},
-                            status=status.HTTP_201_CREATED)
+            serializer.update(instance, serializer.validated_data)
+            response_data = {'message': SUCCESS_MESSAGES['VIDEO_GALLERY']['UPDATED_SUCCESSFULLY'],
+                             'data': serializer.data}
+            return Response(response_data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):
         """
-         Delete an instance of Gallery
+        This method deletes an instance of the VideoGallery model using the primary key
+        It also deletes the associated Video folder if it exists.
+        It returns a success response with a message after the deletion is complete.
+        :return: success response
         """
         instance = self.get_object()
-        user = request.user.id
-        folder_path = f"media/{user.username}/{self.folder_name}/{instance.gallery_name}"
+        user = request.user
+        username = user.get_username()
+        folder_path = VIDEO_GALLERY_PATH.format(
+            username=username, gallery_name=instance.gallery_name
+        )
         if os.path.exists(folder_path):
             shutil.rmtree(folder_path)
         instance.delete()
-        return Response({'message': SUCCESS_MESSAGES['BASE_GALLERY']['DELETED_SUCCESSFULLY']})
+        return Response({'message': SUCCESS_MESSAGES['VIDEO_GALLERY']['DELETED_SUCCESSFULLY']})
 
 
-class ImageGalleryViewSet(BaseGalleryViewSet):
+class VideoViewSet(viewsets.ModelViewSet):
     """
-    class ImageGalleryViewSet for handling CRUD for ImageGallery
+    The VideoViewSet handles Create and Delete operations for the VideoGallery model,
+    with authentication required for all actions.
+    It provides a serializer class for each action and
+    filters queryset based on the authenticated user.
     """
-    queryset = ImageGallery
-    serializer_class = ImageGallerySerializer
-    create_serializer_class = ImageGalleryCreateSerializer
-    update_serializer_class = ImageGalleryUpdateSerializer
-    folder_name = folder_name['IMAGE_folder_name']
-
-    def get_serializer_class(self):
-        """
-        Get the Serializer Class as ImageGalleryCreateSerializer or ImageGalleryUpdateSerializer or
-        ImageGallerySerializer as per required action
-        """
-        if self.action == 'create':
-            return self.create_serializer_class
-        if self.action == 'update':
-            return self.update_serializer_class
-        return self.serializer_class
-
-
-class VideoGalleryViewSet(BaseGalleryViewSet):
-    """
-    class VideoGalleryViewSet for handling CRUD for VideoGallery
-    """
-    queryset = VideoGallery
-    serializer_class = VideoGallerySerializer
-    create_serializer_class = VideoGalleryCreateSerializer
-    update_serializer_class = VideoGalleryUpdateSerializer
-    folder_name = folder_name['VIDEO_folder_name']
-
-    def get_serializer_class(self):
-        """
-        Get the Serializer Class as VideoGalleryCreateSerializer or VideoGalleryUpdateSerializer or
-        VideoGallerySerializer as per required action
-        """
-        if self.action == 'create':
-            return self.create_serializer_class
-        if self.action == 'update':
-            return self.update_serializer_class
-        return self.serializer_class
-
-
-class BaseMediaViewSet(viewsets.ModelViewSet):
-    """
-    class BaseMediaViewSet for Create,Read and Delete
-    operations for 'ImageViewSet' and 'VideoViewSet'
-    """
+    queryset = Video
     http_method_names = ['get', 'post', 'delete']
-    permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
-    create_serializer_class = None
-    serializer_class = None
-    media_name = None
-    gallery_field_name = None
-    create_success_message = None
-    delete_success_message = None
 
     def get_serializer_class(self):
         """
-        Get the Serializer Class as create_serializer_class
-        or serializer_class as per required action
+        The get_serializer_class returns a serializer class based on the action being performed.
+        For 'create' action, it returns VideoCreateSerializer,
+        and for all other actions, it returns the default serializer, VideoSerializer.
+        :return:serializer class
         """
         if self.action == 'create':
-            return self.create_serializer_class
-        return self.serializer_class
+            return VideoCreateSerializer
+        return VideoSerializer
+
+    def get_queryset(self):
+        """
+        The get_queryset method returns a queryset of Image Model objects
+        filtered based on the authenticated user.
+        It orders the queryset based on the ID of the objects.
+        :return: Image Gallery objects
+        """
+        user = self.request.user
+        return Video.objects.filter(video_gallery__user=user).order_by('id')
 
     def list(self, request, *args, **kwargs):
         """
-        list all data for current media
+        The list retrieves all instances of the Video model.
+        serializes them using the serializer returned by the get_serializer() method,
+        and returns the serialized data in a Response object with a status code of 200 (OK).
+        :return: Video instances
         """
         serializer = self.get_serializer(self.get_queryset(), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
         """
-        retrieves an instance of current media
+        This method retrieves a single instance of the Video model
+        using the provided primary key (pk).
+        It then serializes the instance using the serializer defined for the view and
+        returns the serialized data in a Response object with a status code of 200 (OK).
+        :return: Single Video instance
         """
         serializer = self.get_serializer(self.get_object())
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
         """
-        create new instance for current media
+        This method creates a new instance of the Video model
+        If the data is valid, it creates a new instance and
+        returns a success response with a status code of 201.
+        If the data is invalid, it returns an error response with a status code of 400.
+        :return: response object
         """
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            media = serializer.create(serializer.validated_data)
-            media_url = f"media/{getattr(media, self.media_name).name}"
-            return Response({'message': self.create_success_message.format(media=self.media_name),
-                             'data': {'media': media_url,
-                                      f'{self.gallery_field_name}_id': getattr(media, self.gallery_field_name).id}},
-                            status=status.HTTP_201_CREATED)
+            video = serializer.create(serializer.validated_data)
+            video_url = VIDEO_URL_TEMPLATE.format(MEDIA_URL, video.video.name).replace(' ', '%20')
+            response_data = {'message': SUCCESS_MESSAGES['VIDEO']['CREATED_SUCCESSFULLY'],
+                             ' data ': {'video': video_url,
+                                        'video_gallery_id': video.video_gallery_id,
+                                        'gallery_name': video.video_gallery.gallery_name}},
+            return Response(response_data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):
         """
-        Delete an instance of current media
+        This method deletes an instance of the Video model using the primary key
+        It also deletes the associated video folder if it exists.
+        It returns a success response with a message after the deletion is complete.
+        :return: success response
         """
         instance = self.get_object()
-        media_path = f"media/{getattr(instance, self.media_name).name}"
-        os.remove(media_path)
+        video_path = VIDEO_PATH_TEMPLATE.format(MEDIA_URL, instance.video.name)
+        os.remove(video_path)
         instance.delete()
-        return Response({'message': self.delete_success_message.format(media=self.media_name)})
-
-
-class ImageViewSet(BaseMediaViewSet):
-    """
-    class ImageViewSet for Create,Read and Delete operations for 'ImageViewSet'
-    """
-    queryset = Image
-    serializer_class = ImageSerializer
-    create_serializer_class = ImageCreateSerializer
-    media_name = media_name['IMAGE_media']
-    gallery_field_name = gallery_field_name['Image_gallery_field']
-    create_success_message = SUCCESS_MESSAGES["IMAGE"]["CREATED_SUCCESSFULLY"]
-    delete_success_message = SUCCESS_MESSAGES["IMAGE"]["DELETED_SUCCESSFULLY"]
-
-    def get_queryset(self):
-        """
-         Get the queryset of Image Model
-        """
-        user = self.request.user.id
-        return self.queryset.objects.filter(image_gallery__user=user).order_by('id')
-
-
-class VideoViewSet(BaseMediaViewSet):
-    """
-    class ImageViewSet for Create,Read and Delete operations for 'VideoViewSet'
-    """
-    queryset = Video
-    serializer_class = VideoSerializer
-    create_serializer_class = VideoCreateSerializer
-    media_name = media_name['VIDEO_media']
-    gallery_field_name = gallery_field_name['Video_gallery_field']
-    create_success_message = SUCCESS_MESSAGES["VIDEO"]["CREATED_SUCCESSFULLY"]
-    delete_success_message = SUCCESS_MESSAGES["VIDEO"]["DELETED_SUCCESSFULLY"]
-
-    def get_queryset(self):
-        """
-         Get the queryset of Video Model
-        """
-        user = self.request.user.id
-        return self.queryset.objects.filter(video_gallery__user=user).order_by('id')
+        return Response({'message': SUCCESS_MESSAGES['VIDEO']['DELETED_SUCCESSFULLY']})
