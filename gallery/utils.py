@@ -22,25 +22,24 @@ def generate_unique_video_filename(user, video_gallery, validated_data):
     :return: return a unique file or video name
     """
     current_time = timezone.now()
-    video_count = video_gallery.video_gallery_set.count() + 1
-    video_count_str = f"{video_count:02d}"
-    filename, extension = os.path.splitext(validated_data['video'].name)
-    slugify(filename)
-    unique_filename = VIDEO_FILENAME_FORMAT.format(
-        username=user.username,
-        gallery_name=video_gallery.gallery_name,
-        video_count_str=video_count_str,
-        day=current_time.day,
-        month=current_time.month,
-        year=current_time.year,
-        hour=current_time.hour,
-        minute=current_time.minute,
-        second=current_time.second,
-        microsecond=current_time.microsecond,
-        extension=extension
-    )
-    return unique_filename
-
+    unique_filenames = []
+    for video in validated_data['video']:
+        filename, extension = os.path.splitext(video.name)
+        slugify(filename)
+        unique_filename = VIDEO_FILENAME_FORMAT.format(
+            username=user.username,
+            gallery_name=video_gallery.gallery_name,
+            day=current_time.day,
+            month=current_time.month,
+            year=current_time.year,
+            hour=current_time.hour,
+            minute=current_time.minute,
+            second=current_time.second,
+            microsecond=current_time.microsecond,
+            extension=extension
+        )
+        unique_filenames.append(unique_filename)
+    return ''.join(unique_filenames)
 
 def video_upload_path(instance, filename):
     """

@@ -6,7 +6,7 @@ All serializers are associated with their respective models specified in their `
 import os
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from .constants import MAX_LENGTH, MIN_LENGTH, VIDEO_GALLERY_PATH
+from .constants import MAX_LENGTH, MIN_LENGTH, VIDEO_GALLERY_PATH, MAX_LIMIT, MAX_SIZE, VIDEO_FORMAT
 from .messages import VALIDATION
 from .models import VideoGallery, Video
 from .utils import generate_unique_video_filename
@@ -16,8 +16,21 @@ class VideoSerializer(serializers.ModelSerializer):
     """
     Serializer VideoSerializer to list videos.
     """
-    video = serializers.FileField(required=True, error_messages=VALIDATION['video'])
+    video = serializers.SerializerMethodField()
+    video_gallery_id = serializers.IntegerField(
+        required=True, error_messages=VALIDATION['video_gallery_id'])
     gallery_name = serializers.SerializerMethodField()
+
+    def get_video(self, obj):
+        """
+        Returns the absolute URL of a video associated with the given object.
+        :param obj:Video object
+        :return: The absolute URL of the video
+        """
+        if obj.video:
+            request = self.context.get('request')
+            return request.build_absolute_uri(obj.video.url)
+        return None
 
     @staticmethod
     def get_gallery_name(obj):
@@ -71,17 +84,6 @@ class VideoGalleryCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(VALIDATION['video_gallery_name']['exists'])
         return value
 
-    @staticmethod
-    def validate_video_gallery_set(value):
-        """
-        Validate that each gallery has no more than 10 videos.
-        :param value:video_gallery_set
-        :return:if valid return value ,else return Validation error
-        """
-        if len(value) > 10:
-            raise serializers.ValidationError(VALIDATION['video_gallery_set']['max_limit'])
-        return value
-
     def create(self, validated_data):
         """
         Override the create method to add custom behavior
@@ -117,26 +119,13 @@ class VideoGalleryUpdateSerializer(serializers.ModelSerializer):
 
     def validate_gallery_name(self, value):
         """
-        Check if the gallery_name already exists for the current user.
-        """
+               Validation to check if gallery already exists
+               :param value: gallery_name
+               :return: if valid return value, else return Validation error
+               """
         user = self.context['request'].user
-        gallery_name_exists = VideoGallery.objects.filter(
-            user=user, gallery_name=value).exclude(
-            id=self.instance.id).exists()
-        if gallery_name_exists:
-            raise serializers.ValidationError(
-                VALIDATION['video_gallery_name']['exists_while_updating'])
-        return value
-
-    @staticmethod
-    def validate_video_gallery_set(value):
-        """
-        Validate that each gallery has no more than 10 videos.
-        :param value:video_gallery_set
-        :return:if valid return value ,else return Validation error
-        """
-        if len(value) > 10:
-            raise serializers.ValidationError(VALIDATION['video_gallery_set']['max_limit'])
+        if VideoGallery.objects.filter(user=user, gallery_name=value).exists():
+            raise serializers.ValidationError(VALIDATION['VALIDATION']['exists_while_updating'])
         return value
 
     def update(self, instance, validated_data):
@@ -167,67 +156,75 @@ class VideoGalleryUpdateSerializer(serializers.ModelSerializer):
 
 class VideoCreateSerializer(serializers.ModelSerializer):
     """
-    Serializer VideoCreateSerializer creates a new video.
+    Serializer for the Video model creating a new Video instance with two required fields:
+    'gallery' and 'video_gallery_id'.
+    The 'error_messages' argument is used to specify custom error messages
+    in case of validation errors.
     """
-    video = serializers.FileField(required=True, error_messages=VALIDATION['video'])
-    gallery_name = serializers.SerializerMethodField()
+    video = serializers.ListField(
+        child=serializers.FileField(),
+        required=True,
+        error_messages=VALIDATION['video']
+    )
     video_gallery_id = serializers.IntegerField(
         required=True, error_messages=VALIDATION['video_gallery_id'])
 
     @staticmethod
-    def get_gallery_name(obj):
+    def validate_video(value):
         """
-        Serializer method to return the gallery name
-        of the related VideoGallery instance.
+        Custom validation function to ensure that the video file format is mp4
+        and the size of each file is less than 50MB
         """
-        return obj.video_gallery.gallery_name
+        for file in value:
+            filename, ext = os.path.splitext(file.name)
+            if ext.lower() != VIDEO_FORMAT:
+                raise serializers.ValidationError(VALIDATION['video']['format'])
+            if file.size > MAX_SIZE['max_size']:
+                raise serializers.ValidationError(VALIDATION['video']['max_size'])
+        return value
 
     def validate(self, attrs):
         """
         Validation to check user cannot
         upload more than 10 videos in a single gallery
-        :param attrs: video_gallery
-        :return: if valid return value ,else return Validation error
+        :param attrs: video_gallery_id
+        :return: if valid return attrs ,else return Validation error
         """
         video_gallery_id = attrs.get('video_gallery_id')
         user = self.context['request'].user
         if video_gallery_id:
             gallery = get_object_or_404(VideoGallery, id=video_gallery_id, user=user)
-            if gallery.video_gallery_set.count() >= 10:
+            videos = attrs.get('video', [])
+            if len(videos) + gallery.video_gallery_set.count() > MAX_LIMIT['max_limit']:
                 raise serializers.ValidationError(VALIDATION['video_gallery_set']['max_limit'])
         return attrs
-
-    @staticmethod
-    def validate_video(value):
-        """
-        validate a user to upload only video format file
-        :param value: video
-        :return: if valid return value ,else return Validation error
-        """
-        if not value.name.endswith('.mp4'):
-            raise serializers.ValidationError(VALIDATION['video']['video-format'])
-
-        return value
 
     def create(self, validated_data):
         """
         Override the create method to add custom behavior
-        when creating a new Video instance
-        It generates a unique filename for the uploaded
-        Videos and sets the name of the Video
+        when creating a new Image instance
+        It generates a unique filename for the uploaded image
         """
         user = self.context['request'].user
         video_gallery = get_object_or_404(
             VideoGallery, id=validated_data['video_gallery_id'], user=user
         )
-        validated_data['video'].name = generate_unique_video_filename(
-            user, video_gallery, validated_data)
-        return Video.objects.create(video_gallery=video_gallery, **validated_data)
+        videos = []
+        for video in validated_data['video']:
+            video_name = generate_unique_video_filename(user, video_gallery, validated_data)
+            video.name = str(video_name)
+            video_instance = Video(
+                video_gallery=video_gallery,
+                video=video,
+            )
+            videos.append(video_instance)
+        Video.objects.bulk_create(videos)
+        return videos
 
     class Meta:
         """
-        class Meta to specify the model and fields
-        that the serializer should work with
+        Use the Meta class to specify the model and fields
+        that the VideoCreateSerializer should work with
         """
         model = Video
-        fields = ['id', 'video', 'video_gallery_id', 'video', 'gallery_name']
+        fields = ['id', 'video', 'video_gallery_id']

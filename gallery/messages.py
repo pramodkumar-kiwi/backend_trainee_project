@@ -12,7 +12,8 @@ VALIDATION = {
 
     'video': {
         "required": "Please provide a video",
-        "video-format": "Only MP4 video files are supported"
+        "format": "Only mp4 files are allowed.",
+        "max_size": "File size should be less than 50MB."
     },
 
     'video_gallery_id': {

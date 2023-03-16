@@ -10,7 +10,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.response import Response
-from .constants import MEDIA_URL, VIDEO_URL_TEMPLATE, \
+from .constants import MEDIA_URL,\
     VIDEO_PATH_TEMPLATE, VIDEO_GALLERY_PATH
 from .messages import SUCCESS_MESSAGES
 from .models import VideoGallery, Video
@@ -170,8 +170,12 @@ class VideoViewSet(viewsets.ModelViewSet):
         and returns the serialized data in a Response object with a status code of 200 (OK).
         :return: Video instances
         """
-        serializer = self.get_serializer(self.get_queryset(), many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        queryset = self.get_queryset()
+        videos = []
+        for video in queryset:
+            serializer = self.get_serializer(video)
+            videos.append(serializer.data)
+        return Response(videos, status=status.HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
         """
@@ -194,13 +198,23 @@ class VideoViewSet(viewsets.ModelViewSet):
         """
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            video = serializer.create(serializer.validated_data)
-            video_url = VIDEO_URL_TEMPLATE.format(MEDIA_URL, video.video.name).replace(' ', '%20')
-            response_data = {'message': SUCCESS_MESSAGES['VIDEO']['CREATED_SUCCESSFULLY'],
-                             ' data ': {'video': video_url,
-                                        'video_gallery_id': video.video_gallery_id,
-                                        'gallery_name': video.video_gallery.gallery_name}},
-            return Response(response_data, status=status.HTTP_201_CREATED)
+            videos = serializer.create(serializer.validated_data)
+            response_data = []
+            for video in videos:
+                video_url = request.build_absolute_uri(video.video.url)
+                response_data.append({
+                    'id': video.id,
+                    'video': video_url,
+                    'video_gallery_id': video.video_gallery_id,
+                    'gallery': video.video_gallery.gallery_name,
+                    'created_at': video.created_at,
+                    'updated_at': video.updated_at,
+                })
+            return Response(
+                {'message': SUCCESS_MESSAGES['VIDEO']['CREATED_SUCCESSFULLY'], 'data': response_data
+                 },
+                status=status.HTTP_201_CREATED
+            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):
