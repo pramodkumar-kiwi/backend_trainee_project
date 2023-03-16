@@ -1,3 +1,8 @@
+"""
+This file contains the validation, success and error
+messages to provide as constants messages.
+"""
+
 SIGNUP_VALIDATION_ERROR = {
     'first_name': {
         "blank": "first name can not be blank",
@@ -13,12 +18,12 @@ SIGNUP_VALIDATION_ERROR = {
         "blank": "username can not be blank",
         "invalid": "username must contain alphabet and special character",
         "required": "username required",
-        "exits": "username exist"
+        "exits": "username already exist"
     },
     'email': {
         "blank": "Email can not be blank",
         "required": "Email required",
-        "exits": "email exist"
+        "exits": "email already exist"
     },
     'contact': {
         "blank": "contact can not be blank",
@@ -38,7 +43,7 @@ SIGNIN_VALIDATION_ERROR = {
         "blank": "username can not be blank",
         "invalid": "username must contain alphabet and special character",
         "required": "username required",
-        "exits": "username exist"
+        "exits": "username already exist"
     },
     'password': {
         "blank": "password can not be blank",
@@ -52,7 +57,7 @@ EMAIL_VALIDATOR_VALIDATION_ERROR = {
     'email': {
         "blank": "email can not be blank",
         "required": "email required",
-        "exits": "email exist"
+        "exits": "email already exist"
     }
 }
 
