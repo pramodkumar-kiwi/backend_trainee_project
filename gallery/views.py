@@ -17,7 +17,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from gallery.constants import IMAGE_URL_TEMPLATE, MEDIA_URL, IMAGE_PATH_TEMPLATE, \
+from gallery.constants import MEDIA_URL, IMAGE_PATH_TEMPLATE, \
     IMAGE_GALLERY_PATH
 from gallery.messages import SUCCESS_MESSAGES
 from gallery.models import ImageGallery, Image
@@ -95,10 +95,13 @@ class ImageGalleryViewSet(viewsets.ModelViewSet):
         """
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            serializer.create(serializer.validated_data)
+            image_gallery = serializer.create(serializer.validated_data)
             return Response({'message': SUCCESS_MESSAGES['IMAGE_GALLERY']['CREATED_SUCCESSFULLY'],
-                             'data': serializer.data},
-                            status=status.HTTP_201_CREATED)
+                             'data': {
+                                 'id': image_gallery.id,
+                                 'gallery': image_gallery.gallery_name,
+                                 'created_at': image_gallery.created_at,
+                             }}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, *args, **kwargs):
@@ -113,9 +116,14 @@ class ImageGalleryViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data)
         if serializer.is_valid():
-            serializer.update(instance, serializer.validated_data)
+            image_gallery = serializer.update(instance, serializer.validated_data)
             return Response({'message': SUCCESS_MESSAGES['IMAGE_GALLERY']['UPDATED_SUCCESSFULLY'],
-                             'data': serializer.data},
+                             'data': {
+                                 'id': image_gallery.id,
+                                 'gallery': image_gallery.gallery_name,
+                                 'created_at': image_gallery.created_at,
+                                 'updated_at': image_gallery.updated_at,
+                             }},
                             status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
 
@@ -207,10 +215,21 @@ class ImageViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             images = serializer.create(serializer.validated_data)
-            image_url = (IMAGE_URL_TEMPLATE.format(image.image.name) for image in images)
+
+            response_data = []
+            for image in images:
+                image_url = request.build_absolute_uri(image.image.url)
+                response_data.append({
+                    'id': image.id,
+                    'image': image_url,
+                    'image_gallery_id': image.image_gallery_id,
+                    'gallery': image.image_gallery.gallery_name,
+                    'created_at': image.created_at,
+                    'updated_at': image.updated_at,
+                })
             return Response(
-                {'message': SUCCESS_MESSAGES['IMAGE']['CREATED_SUCCESSFULLY'],
-                 'data': {'image': image_url, 'image_gallery_id': images[0].image_gallery_id}},
+                {'message': SUCCESS_MESSAGES['IMAGE']['CREATED_SUCCESSFULLY'], 'data': response_data
+                 },
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

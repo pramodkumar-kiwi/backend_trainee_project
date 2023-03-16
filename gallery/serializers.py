@@ -47,7 +47,7 @@ class ImageSerializer(serializers.ModelSerializer):
         that the ImageSerializer should work with
         """
         model = Image
-        fields = ['id', 'image', 'image_gallery_id']
+        fields = ['id', 'image', 'image_gallery_id', 'created_at', 'updated_at']
 
 
 class ImageCreateSerializer(serializers.ModelSerializer):
@@ -98,7 +98,7 @@ class ImageCreateSerializer(serializers.ModelSerializer):
         """
         Override the create method to add custom behavior
         when creating a new Image instance
-        It generates a unique filename for the uploaded gallery and sets the name of the gallery
+        It generates a unique filename for the uploaded image
         """
         user = self.context['request'].user
         image_gallery = get_object_or_404(
@@ -131,7 +131,7 @@ class ImageCreateSerializer(serializers.ModelSerializer):
         that the ImageCreateSerializer should work with
         """
         model = Image
-        fields = ['id', 'image', 'image_gallery_id']
+        fields = ['id', 'image', 'image_gallery_id', 'created_at', 'updated_at']
 
 
 class ImageGallerySerializer(serializers.ModelSerializer):
@@ -153,7 +153,7 @@ class ImageGallerySerializer(serializers.ModelSerializer):
         that the ImageGallerySerializer should work with
         """
         model = ImageGallery
-        fields = ['id', 'gallery_name', 'image_gallery_set']
+        fields = ['id', 'gallery_name', 'image_gallery_set', 'created_at', 'updated_at']
 
 
 class ImageGalleryCreateSerializer(serializers.ModelSerializer):
@@ -202,7 +202,7 @@ class ImageGalleryCreateSerializer(serializers.ModelSerializer):
         that the ImageGalleryCreateSerializer should work with
         """
         model = ImageGallery
-        fields = ['id', 'gallery_name']
+        fields = ['id', 'gallery_name','created_at', 'updated_at']
 
 
 class ImageGalleryUpdateSerializer(serializers.ModelSerializer):
@@ -254,4 +254,4 @@ class ImageGalleryUpdateSerializer(serializers.ModelSerializer):
         that the ImageGalleryUpdateSerializer should work with
         """
         model = ImageGallery
-        fields = ['id', 'gallery_name']
+        fields = ['id', 'gallery_name', 'created_at', 'updated_at']

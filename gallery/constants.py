@@ -25,7 +25,7 @@ MAX_SIZE_VIDEO = {
 
 MEDIA_URL = "media/"
 
-IMAGE_URL_TEMPLATE = "{}"
+IMAGE_URL_TEMPLATE = "{}{}"
 IMAGE_PATH_TEMPLATE = "{}{}"
 
 IMAGE_GALLERY_PATH = 'media/{username}/image/{gallery_name}'
