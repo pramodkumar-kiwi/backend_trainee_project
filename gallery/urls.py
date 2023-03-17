@@ -11,7 +11,7 @@ from rest_framework.routers import DefaultRouter
 from gallery import views
 
 router = DefaultRouter()
-router.register('image-gallery', views.ImageGalleryViewSet, basename='image-gallery')
+router.register('image-gallery', views.ImageGalleryViewSet, basename='image_gallery')
 router.register('images', views.ImageViewSet, basename='image')
 
 urlpatterns = [

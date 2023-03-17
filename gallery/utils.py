@@ -6,6 +6,7 @@ import os
 
 from django.utils import timezone
 from django.utils.text import slugify
+
 from gallery.constants import FILENAME_FORMAT, IMAGE_UPLOAD_PATH
 
 

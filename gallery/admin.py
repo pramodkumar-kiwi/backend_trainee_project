@@ -4,6 +4,7 @@ ImageGallery and Image.
 These are associated with their respective models ImageGallery and Image.
 """
 from django.contrib import admin
+
 from gallery.models import ImageGallery, Image
 
 

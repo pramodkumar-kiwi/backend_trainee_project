@@ -19,7 +19,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from gallery.constants import MEDIA_URL, IMAGE_PATH_TEMPLATE, \
     IMAGE_GALLERY_PATH
-from gallery.messages import SUCCESS_MESSAGES
+from gallery.messages import SUCCESS_MESSAGES, VALIDATION
 from gallery.models import ImageGallery, Image
 from gallery.serializers import ImageGallerySerializer, ImageGalleryCreateSerializer, \
     ImageGalleryUpdateSerializer, ImageCreateSerializer, ImageSerializer
@@ -71,6 +71,10 @@ class ImageGalleryViewSet(viewsets.ModelViewSet):
         and returns the serialized data in a Response object with a status code of 200 (OK).
         :return: Image Gallery instances
         """
+        if not self.get_queryset().exists():
+            return Response(
+                {"message": VALIDATION['image_gallery_set']['no_album']}, status=status.HTTP_200_OK
+            )
         serializer = self.get_serializer(self.get_queryset(), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -142,7 +146,10 @@ class ImageGalleryViewSet(viewsets.ModelViewSet):
         if os.path.exists(folder_path):
             shutil.rmtree(folder_path)
         instance.delete()
-        return Response({'message': SUCCESS_MESSAGES['IMAGE_GALLERY']['DELETED_SUCCESSFULLY']})
+        return Response(
+            {'message': SUCCESS_MESSAGES['IMAGE_GALLERY']['DELETED_SUCCESSFULLY']},
+            status=status.HTTP_200_OK
+        )
 
 
 class ImageViewSet(viewsets.ModelViewSet):
@@ -187,6 +194,10 @@ class ImageViewSet(viewsets.ModelViewSet):
         :return: Image instances
         """
         queryset = self.get_queryset()
+        if not queryset.exists():
+            return Response(
+                {"message": VALIDATION['image']['no_image']}, status=status.HTTP_200_OK
+            )
         images = []
         for image in queryset:
             serializer = self.get_serializer(image)
@@ -245,4 +256,7 @@ class ImageViewSet(viewsets.ModelViewSet):
         image_path = IMAGE_PATH_TEMPLATE.format(MEDIA_URL, instance.image.name)
         os.remove(image_path)
         instance.delete()
-        return Response({'message': SUCCESS_MESSAGES['IMAGE']['DELETED_SUCCESSFULLY']})
+        return Response(
+            {'message': SUCCESS_MESSAGES['IMAGE']['DELETED_SUCCESSFULLY']},
+            status=status.HTTP_200_OK
+        )

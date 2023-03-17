@@ -19,10 +19,6 @@ MAX_SIZE_IMAGE = {
     'max_size': 2 * 1024 * 1024,
 }
 
-MAX_SIZE_VIDEO = {
-    'max_size': 10 * 1024 * 1024,
-}
-
 MEDIA_URL = "media/"
 
 IMAGE_URL_TEMPLATE = "{}{}"
