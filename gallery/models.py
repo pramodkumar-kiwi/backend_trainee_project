@@ -3,8 +3,8 @@ This file defines Django models `ImageGallery` and 'Image' representing gallery 
 This model is associated with its respective database table specified in its `Meta` class.
 """
 from django.db import models
-from account.models import User
 from gallery.utils import image_upload_path
+from account.models import User
 
 
 class ImageGallery(models.Model):

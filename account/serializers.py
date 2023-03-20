@@ -35,7 +35,8 @@ class SignupSerializer(serializers.ModelSerializer):
                                      error_messages=SIGNUP_VALIDATION_ERROR['username'])
     email = serializers.EmailField(required=True, allow_blank=False,
                                    error_messages=SIGNUP_VALIDATION_ERROR['email'])
-    contact = serializers.CharField(min_length=MIN_LENGTH['contact'], max_length=MAX_LENGTH['contact'],
+    contact = serializers.CharField(min_length=MIN_LENGTH['contact'],
+                                    max_length=MAX_LENGTH['contact'],
                                     required=True, allow_blank=False,
                                     error_messages=SIGNUP_VALIDATION_ERROR['contact'])
     password = serializers.CharField(write_only=True, min_length=MIN_LENGTH['password'],

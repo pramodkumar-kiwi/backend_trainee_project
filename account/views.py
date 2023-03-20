@@ -155,8 +155,27 @@ class UserProfileView(viewsets.ModelViewSet):
         :param kwargs: This return the validated data in the form of dictionary
         :return: This return the updated data to the user with status
         """
-        userprofile = self.request.user
+        userprofile = self.get_object()
         serializer = self.serializer_class(userprofile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.update(userprofile, serializer.validated_data)
+            return Response({
+                'message': SUCCESS_MESSAGE['success'],
+                'data': serializer.data,
+            }, status=status.HTTP_200_OK)
+        return Response({
+            'error': ERROR_MESSAGE['error']
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs):
+        """
+        :param request: It gets the data that is requested by the user
+        :param args: This returns the validated data in the form of list
+        :param kwargs: This return the validated data in the form of dictionary
+        :return: This return the updated data to the user with status
+        """
+        userprofile = self.get_object()
+        serializer = self.serializer_class(userprofile, data=request.data)
         if serializer.is_valid():
             serializer.update(userprofile, serializer.validated_data)
             return Response({

@@ -13,6 +13,7 @@ VALIDATION = {
     'image': {
         "required": "Please provide a image",
         "max_size": "Make sure the image size is less than 2 Mb",
+        "no_image": "No images found"
     },
     'image_gallery_id': {
         "required": "Please provide a image gallery id",
@@ -20,7 +21,7 @@ VALIDATION = {
     'image_gallery_set': {
         'no_album': 'No album found',
         'max_limit': 'Cannot upload more than 10 images.',
-        'available_slots': 'Make sure you have enough space in the gallery'
+        'available_slots': 'Make sure you have enough space in the gallery',
     }
 }
 SUCCESS_MESSAGES = {
