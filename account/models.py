@@ -33,3 +33,20 @@ class User(AbstractUser):
         for User model
         """
         db_table = 'User'
+
+
+class ForgetPassword(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    forget_password_token = models.CharField(max_length=255, unique=True, null=True, blank=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    objects = models.Manager()
+
+    def __str__(self):
+        return str(self.user.email)
+
+    class Meta:
+        """
+        Use the Meta class to specify the database table
+        for ForgetPassword model
+        """
+        db_table = 'ForgetPassword'

@@ -10,11 +10,17 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
 from rest_framework_simplejwt.exceptions import InvalidToken
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.urls import reverse
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 
 from .constants import REGEX, MAX_LENGTH, MIN_LENGTH, DIRECTORY_PATH
 from .messages import SIGNUP_VALIDATION_ERROR, SIGNIN_VALIDATION_ERROR, \
     EMAIL_VALIDATOR_VALIDATION_ERROR, USERNAME_VALIDATOR_VALIDATION_ERROR, TOKEN_ERROR
-from .models import User
+from .models import User, ForgetPassword
 
 
 class SignupSerializer(serializers.ModelSerializer):
@@ -399,3 +405,45 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'first_name', 'last_name', 'username',
                   'email', 'contact', 'password']
+
+
+class ForgotPasswordSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField()
+
+    @staticmethod
+    def validate_email(email):
+        """
+        Validate the user's email using Django's PasswordResetForm
+        """
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User does not exist")
+
+        PasswordResetForm({'email': email})
+
+        return email
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        # Generate a password reset token and URL for the user
+        user = User.objects.get(email=validated_data['email'])
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        reset_url = request.build_absolute_uri(reverse('forget_password-list')) + f'?uidb64={uid}&token={token}'
+        # Send the password reset email to the user
+        verify_token = ForgetPassword.objects.create(user=user, forget_password_token=token)
+        send_mail(
+            'Password Reset Request',
+            f'Please follow this link to reset your password: {reset_url}',
+            'projectgalleria5@gmail.com',
+            [user.email],
+            fail_silently=False,
+        )
+
+        return validated_data
+
+    class Meta:
+        model = User
+        fields = ['email']
+

@@ -12,7 +12,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .messages import SUCCESS_MESSAGE, ERROR_MESSAGE
 from .serializers import SignupSerializer, SigninSerializer, UsernameValidatorSerializer, \
-    EmailValidatorSerializer, SignOutSerializer, UserProfileSerializer
+    EmailValidatorSerializer, SignOutSerializer, UserProfileSerializer, ForgotPasswordSerializer
 from .models import User
 
 
@@ -184,3 +184,21 @@ class UserProfileView(viewsets.ModelViewSet):
         return Response({
             'error': ERROR_MESSAGE['error']
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ForgotPasswordView(viewsets.ModelViewSet):
+    serializer_class = ForgotPasswordSerializer
+    queryset = User
+
+    def get_queryset(self):
+        return User.objects.filter(email='email').first()
+
+    def create(self, request, *args, **kwargs):
+        serializer = ForgotPasswordSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid(raise_exception=True):
+            serializer.create(serializer.validated_data)
+            return Response({'message': 'Password reset email sent'},
+                            status=status.HTTP_200_OK)
+        return Response({'message': 'Email verification failed'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
