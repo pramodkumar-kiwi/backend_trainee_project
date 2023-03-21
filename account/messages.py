@@ -23,7 +23,7 @@ SIGNUP_VALIDATION_ERROR = {
     'email': {
         "blank": "Email can not be blank",
         "required": "Email required",
-        "exits": "email already exist"
+        "exists": "email already exist"
     },
     'contact': {
         "blank": "contact can not be blank",

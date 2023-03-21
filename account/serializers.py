@@ -237,17 +237,6 @@ class EmailValidatorSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True, allow_blank=False,
                                    error_messages=EMAIL_VALIDATOR_VALIDATION_ERROR['email'])
 
-    @staticmethod
-    def validate_email(value):
-        """
-        checks that the email exits
-        :param value: email
-        :return: if exists: return Validation error else return value
-        """
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError(EMAIL_VALIDATOR_VALIDATION_ERROR['email']['exits'])
-        return True
-
     def create(self, validated_data):
         return validated_data
 

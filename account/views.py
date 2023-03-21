@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from .messages import SUCCESS_MESSAGE, ERROR_MESSAGE
+from .messages import SUCCESS_MESSAGE, ERROR_MESSAGE, SIGNUP_VALIDATION_ERROR
 from .serializers import SignupSerializer, SigninSerializer, UsernameValidatorSerializer, \
     EmailValidatorSerializer, SignOutSerializer, UserProfileSerializer
 from .models import User
@@ -78,24 +78,31 @@ class EmailValidatorView(viewsets.ModelViewSet):
     """
     queryset = User
     serializer_class = EmailValidatorSerializer
-    http_method_names = ['get', 'post']
+    http_method_names = ['get','post']
 
     def get_queryset(self):
         """
         get queryset of User Model
         """
-        return User.objects.filter(email="email")
+        email = self.request.query_params.get('email', '')
+        return User.objects.filter(email=email)
 
-    def retrieve(self, request, *args, **kwargs):
-        """
-        get an instance of user and validate it using serializer class
-        """
-        serializer = self.serializer_class(data=request.GET)
-        if serializer.is_valid(raise_exception=True):
-            return Response(data={
-                'success': True, 'validated_data': serializer.validated_data
-            }, status=status.HTTP_200_OK)
+    def list(self, request, *args, **kwargs):
+        if self.get_queryset().exists():
+            return Response(
+                {
+                 "message": SIGNUP_VALIDATION_ERROR['email']['exists']
+                }, status=status.HTTP_200_OK
+            )
         return Response(status=status.HTTP_200_OK)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            return Response(
+                serializer.validated_data, status=status.HTTP_200_OK
+            )
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class UsernameValidatorView(viewsets.ModelViewSet):
