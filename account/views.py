@@ -61,7 +61,6 @@ class SignOutView(viewsets.ModelViewSet):
     token to avoid access of unauthenticated user
     """
     serializer_class = SignOutSerializer
-    permission_classes = [IsAuthenticated]
     http_method_names = ['post']
 
     def create(self, request, *args, **kwargs):
