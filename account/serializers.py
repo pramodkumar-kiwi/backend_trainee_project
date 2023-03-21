@@ -432,7 +432,10 @@ class ForgotPasswordSerializer(serializers.ModelSerializer):
         token = default_token_generator.make_token(user)
         reset_url = request.build_absolute_uri(reverse('forget_password-list')) + f'?uidb64={uid}&token={token}'
         # Send the password reset email to the user
-        verify_token = ForgetPassword.objects.create(user=user, forget_password_token=token)
+        forget_password = ForgetPassword.objects.update_or_create(
+            user=user,
+            defaults={'forget_password_token': token},
+        )
         send_mail(
             'Password Reset Request',
             f'Please follow this link to reset your password: {reset_url}',
