@@ -1,15 +1,256 @@
 """
-This module defines different Django serializers,
-representing image-gallery, images ,video-gallery and videos.
-All serializers are associated with their respective models specified in their `Meta` classes.
+This file contains different serializers for Image, ImageGallery, Video , VideoGallery objects.
+They handle serialization and deserialization of these objects,
+and also include validation and creation/update logic.
+The ImageCreateSerializer checks for gallery size and user limits, and creates a unique filename.
+The ImageGalleryCreateSerializer creates a new directory for the gallery's images,
+while the ImageGalleryUpdateSerializer renames the directory if the gallery name is updated.
+The VideoCreateSerializer checks for gallery size and user limits, and creates a unique filename.
+The VideoGalleryCreateSerializer creates a new directory for the gallery's videos,
+while the VideoGalleryUpdateSerializer renames the directory if the gallery name is updated.
 """
 import os
+
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from .constants import MAX_LENGTH, MIN_LENGTH, VIDEO_GALLERY_PATH, MAX_LIMIT, MAX_SIZE, VIDEO_FORMAT
-from .messages import VALIDATION
-from .models import VideoGallery, Video
-from .utils import generate_unique_video_filename
+
+from gallery.constants import MAX_LENGTH, MIN_LENGTH, IMAGE_GALLERY_PATH, VIDEO_GALLERY_PATH, MAX_LIMIT, \
+    MAX_SIZE_IMAGE, MAX_SIZE_VIDEO, VIDEO_FORMAT
+from gallery.messages import VALIDATION
+from gallery.models import ImageGallery, Image, VideoGallery, Video
+from gallery.utils import generate_unique_image, generate_unique_video_filename
+
+
+class ImageSerializer(serializers.ModelSerializer):
+    """
+     Serializer for the Image model with two required fields:
+     'gallery' and 'image_gallery_id'.
+     The 'error_messages' argument is used to specify custom error messages
+     in case of validation errors.
+    """
+    image = serializers.SerializerMethodField()
+    image_gallery_id = serializers.IntegerField(
+        required=True, error_messages=VALIDATION['image_gallery_id'])
+
+    def get_image(self, obj):
+        """
+        Returns the absolute URL of an image associated with the given object.
+        :param obj:Image object
+        :return: The absolute URL of the image
+        """
+        if obj.image:
+            request = self.context.get('request')
+            return request.build_absolute_uri(obj.image.url)
+        return None
+
+    # pylint: disable=too-few-public-methods
+    class Meta:
+        """
+        Use the Meta class to specify the model and fields
+        that the ImageSerializer should work with
+        """
+        model = Image
+        fields = ['id', 'image', 'image_gallery_id', 'created_at', 'updated_at']
+
+
+class ImageCreateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Image model creating a new Image instance with two required fields:
+    'gallery' and 'image_gallery_id'.
+    The 'error_messages' argument is used to specify custom error messages
+    in case of validation errors.
+    """
+    image = serializers.ListField(
+        child=serializers.ImageField(),
+        required=True,
+        error_messages=VALIDATION['image']
+    )
+    image_gallery_id = serializers.IntegerField(
+        required=True, error_messages=VALIDATION['image_gallery_id'])
+
+    def validate(self, attrs):
+        """
+        Validation to check user cannot
+        upload more than 10 images in a single gallery
+        :param attrs: image_gallery_id
+        :return: if valid return attrs ,else return Validation error
+        """
+        image_gallery_id = attrs.get('image_gallery_id')
+        user = self.context['request'].user
+        if image_gallery_id:
+            gallery = get_object_or_404(ImageGallery, id=image_gallery_id, user=user)
+            images = attrs.get('image', [])
+            if len(images) + gallery.image_gallery_set.count() > MAX_LIMIT['max_limit']:
+                raise serializers.ValidationError(VALIDATION['image_gallery_set']['max_limit'])
+        return attrs
+
+    @staticmethod
+    def validate_image(value):
+        """
+        This function validates the size of the uploaded gallery and
+        raises a validation error if it exceeds the maximum size limit specified in MAX_SIZE
+        :param value: gallery
+        :return: if valid return value ,else return Validation error
+        """
+        for image in value:
+            if image.size > MAX_SIZE_IMAGE['max_size']:
+                raise serializers.ValidationError(VALIDATION['image']['max_size'])
+            return value
+
+    def create(self, validated_data):
+        """
+        Override the create method to add custom behavior
+        when creating a new Image instance
+        It generates a unique filename for the uploaded image
+        """
+        user = self.context['request'].user
+        image_gallery = get_object_or_404(
+            ImageGallery, id=validated_data['image_gallery_id'], user=user
+        )
+        images = []
+
+        for image in validated_data['image']:
+            image_name = generate_unique_image(user, image_gallery, validated_data)
+            image.name = str(image_name)
+            image_instance = Image(
+                image_gallery=image_gallery,
+                image=image,
+            )
+            images.append(image_instance)
+        Image.objects.bulk_create(images)
+        return images
+
+    # pylint: disable=too-few-public-methods
+    class Meta:
+        """
+        Use the Meta class to specify the model and fields
+        that the ImageCreateSerializer should work with
+        """
+        model = Image
+        fields = ['id', 'image', 'image_gallery_id', 'created_at', 'updated_at']
+
+
+class ImageGallerySerializer(serializers.ModelSerializer):
+    """
+    Serializer for the ImageGallery model with two required fields:
+    'image_gallery_set' and 'gallery_name'.
+    The 'error_messages' argument is used to specify custom error messages
+    in case of validation errors.
+    """
+    image_gallery_set = ImageSerializer(many=True, read_only=True)
+    gallery_name = serializers.CharField(
+        min_length=MIN_LENGTH['gallery_name'], max_length=MAX_LENGTH['gallery_name'],
+        required=True, error_messages=VALIDATION['gallery_name'])
+
+    # pylint: disable=too-few-public-methods
+    class Meta:
+        """
+        Use the Meta class to specify the model and fields
+        that the ImageGallerySerializer should work with
+        """
+        model = ImageGallery
+        fields = ['id', 'gallery_name', 'image_gallery_set', 'created_at', 'updated_at']
+
+
+class ImageGalleryCreateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the ImageGallery model creating a new ImageGallery instance with
+    one required field:'gallery_name'.
+    The 'error_messages' argument is used to specify custom error messages
+    in case of validation errors.
+    """
+    gallery_name = serializers.CharField(
+        min_length=MIN_LENGTH['gallery_name'], max_length=MAX_LENGTH['gallery_name'],
+        required=True, error_messages=VALIDATION['gallery_name'])
+
+    def validate_gallery_name(self, value):
+        """
+        Validation to check if gallery already exists
+        :param value: gallery_name
+        :return: if valid return value, else return Validation error
+        """
+        user = self.context['request'].user
+        if ImageGallery.objects.filter(user=user, gallery_name=value).exists():
+            raise serializers.ValidationError(VALIDATION['gallery_name']['exists'])
+
+        return value
+
+    def create(self, validated_data):
+        """
+        Override the create method to add custom behavior
+        when creating a new ImageGallery instance
+        It then generates a path for the new gallery using a string format method,
+        and creates the directory specified in the path using
+        'os.makedirs' with the 'exist_ok' parameter set to True.
+        """
+        user = self.context['request'].user
+        image_gallery = ImageGallery.objects.create(user=user, **validated_data)
+        path = IMAGE_GALLERY_PATH.format(
+            username=user.username, gallery_name=image_gallery.gallery_name
+        )
+        os.makedirs(path, exist_ok=False)
+        return image_gallery
+
+    # pylint: disable=too-few-public-methods
+    class Meta:
+        """
+        Use the Meta class to specify the model and fields
+        that the ImageGalleryCreateSerializer should work with
+        """
+        model = ImageGallery
+        fields = ['id', 'gallery_name', 'created_at', 'updated_at']
+
+
+class ImageGalleryUpdateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the ImageGallery model updating an existing ImageGallery instance
+    with one required field: 'gallery_name'.
+    The 'error_messages' argument is used to specify custom error messages
+    in case of validation errors.
+    """
+    gallery_name = serializers.CharField(min_length=MIN_LENGTH['gallery_name'],
+                                         max_length=MAX_LENGTH['gallery_name'],
+                                         required=True, error_messages=VALIDATION['gallery_name'])
+
+    def validate_gallery_name(self, value):
+        """
+        Validation to check if gallery already exists
+        :param value: gallery_name
+        :return: if valid return value, else return Validation error
+        """
+        user = self.context['request'].user
+        if ImageGallery.objects.filter(user=user, gallery_name=value).exists():
+            raise serializers.ValidationError(VALIDATION['gallery_name']['exists'])
+
+        return value
+
+    def update(self, instance, validated_data):
+        """
+        Override the update method to add custom behavior
+        when updating an existing ImageGallery instance
+        The method then generates old and new paths for the gallery using a
+        string format method,and renames the old directory to the new directory using 'os.rename'.
+        """
+        user = self.context['request'].user
+        ImageGallery.objects.filter(id=instance.id).update(**validated_data)
+        old_path = IMAGE_GALLERY_PATH.format(
+            username=user.username, gallery_name=instance.gallery_name
+        )
+        new_path = IMAGE_GALLERY_PATH.format(
+            username=user.username, gallery_name=validated_data['gallery_name']
+        )
+        os.rename(old_path, new_path)
+        updated_instance = ImageGallery.objects.get(id=instance.id)
+        return updated_instance
+
+    # pylint: disable=too-few-public-methods
+    class Meta:
+        """
+        Use the Meta class to specify the model and fields
+        that the ImageGalleryUpdateSerializer should work with
+        """
+        model = ImageGallery
+        fields = ['id', 'gallery_name', 'created_at', 'updated_at']
 
 
 class VideoSerializer(serializers.ModelSerializer):
@@ -46,7 +287,7 @@ class VideoSerializer(serializers.ModelSerializer):
         that the serializer should work with
         """
         model = Video
-        fields = ['id', 'video', 'video_gallery_id', 'gallery_name']
+        fields = ['id', 'video', 'video_gallery_id', 'gallery_name', 'created_at', 'updated_at']
 
 
 class VideoGallerySerializer(serializers.ModelSerializer):
@@ -55,8 +296,8 @@ class VideoGallerySerializer(serializers.ModelSerializer):
      """
     video_gallery_set = VideoSerializer(many=True, read_only=True)
     gallery_name = serializers.CharField(
-        min_length=MIN_LENGTH['video_gallery_name'], max_length=MAX_LENGTH['video_gallery_name'],
-        required=True, error_messages=VALIDATION['video_gallery_name'])
+        min_length=MIN_LENGTH['gallery_name'], max_length=MAX_LENGTH['gallery_name'],
+        required=True, error_messages=VALIDATION['gallery_name'])
 
     class Meta:
         """
@@ -64,7 +305,7 @@ class VideoGallerySerializer(serializers.ModelSerializer):
         that the serializer should work with
         """
         model = VideoGallery
-        fields = ['id', 'gallery_name', 'video_gallery_set']
+        fields = ['id', 'gallery_name', 'video_gallery_set', 'created_at', 'updated_at']
 
 
 class VideoGalleryCreateSerializer(serializers.ModelSerializer):
@@ -72,8 +313,8 @@ class VideoGalleryCreateSerializer(serializers.ModelSerializer):
     Serializer VideoGalleryCreateSerializer creates a new video gallery.
     """
     gallery_name = serializers.CharField(
-        min_length=MIN_LENGTH['video_gallery_name'], max_length=MAX_LENGTH['video_gallery_name'],
-        required=True, error_messages=VALIDATION['video_gallery_name'])
+        min_length=MIN_LENGTH['gallery_name'], max_length=MAX_LENGTH['gallery_name'],
+        required=True, error_messages=VALIDATION['gallery_name'])
 
     @staticmethod
     def validate_gallery_name(value):
@@ -103,7 +344,7 @@ class VideoGalleryCreateSerializer(serializers.ModelSerializer):
         that the serializer should work with
         """
         model = VideoGallery
-        fields = ['id', 'gallery_name']
+        fields = ['id', 'gallery_name', 'created_at', 'updated_at']
 
 
 class VideoGalleryUpdateSerializer(serializers.ModelSerializer):
@@ -112,10 +353,10 @@ class VideoGalleryUpdateSerializer(serializers.ModelSerializer):
     updates an existing Video Gallery .
     """
     gallery_name = serializers.CharField(
-        min_length=MIN_LENGTH['video_gallery_name'],
-        max_length=MAX_LENGTH['video_gallery_name'],
+        min_length=MIN_LENGTH['gallery_name'],
+        max_length=MAX_LENGTH['gallery_name'],
         required=True,
-        error_messages=VALIDATION['video_gallery_name'])
+        error_messages=VALIDATION['gallery_name'])
 
     def validate_gallery_name(self, value):
         """
@@ -125,7 +366,7 @@ class VideoGalleryUpdateSerializer(serializers.ModelSerializer):
                """
         user = self.context['request'].user
         if VideoGallery.objects.filter(user=user, gallery_name=value).exists():
-            raise serializers.ValidationError(VALIDATION['VALIDATION']['exists_while_updating'])
+            raise serializers.ValidationError(VALIDATION['video_gallery_name']['exists_while_updating'])
         return value
 
     def update(self, instance, validated_data):
@@ -151,7 +392,7 @@ class VideoGalleryUpdateSerializer(serializers.ModelSerializer):
         that the serializer should work with
         """
         model = VideoGallery
-        fields = ['id', 'gallery_name']
+        fields = ['id', 'gallery_name', 'created_at', 'updated_at']
 
 
 class VideoCreateSerializer(serializers.ModelSerializer):
@@ -179,7 +420,7 @@ class VideoCreateSerializer(serializers.ModelSerializer):
             filename, ext = os.path.splitext(file.name)
             if ext.lower() != VIDEO_FORMAT:
                 raise serializers.ValidationError(VALIDATION['video']['format'])
-            if file.size > MAX_SIZE['max_size']:
+            if file.size > MAX_SIZE_VIDEO['max_size']:
                 raise serializers.ValidationError(VALIDATION['video']['max_size'])
         return value
 
@@ -227,4 +468,4 @@ class VideoCreateSerializer(serializers.ModelSerializer):
         that the VideoCreateSerializer should work with
         """
         model = Video
-        fields = ['id', 'video', 'video_gallery_id']
+        fields = ['id', 'video', 'video_gallery_id', 'created_at', 'updated_at']

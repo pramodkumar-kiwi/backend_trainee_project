@@ -12,7 +12,7 @@ Routing for Signup and Signin
 """
 router.register('signup', views.SignupView, basename='signup')
 router.register('signin', views.SigninView, basename='signin')
-router.register('sign-out', views.SignOutView, basename='sign-out')
+router.register('sign_out', views.SignOutView, basename='sign_out')
 router.register('emailvalidator', views.EmailValidatorView, basename='emailvalidator')
 router.register('username-validator', views.UsernameValidatorView, basename='username-validator')
 router.register('userprofile', views.UserProfileView, basename='userprofile')
