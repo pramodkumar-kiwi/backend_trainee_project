@@ -17,6 +17,9 @@ router.register('emailvalidator', views.EmailValidatorView, basename='emailvalid
 router.register('username-validator', views.UsernameValidatorView, basename='username-validator')
 router.register('userprofile', views.UserProfileView, basename='userprofile')
 router.register('forget_password', views.ForgotPasswordView, basename='forget_password')
+router.register(
+    r'reset_password/(?P<token>[^/.]+)', views.ResetPasswordViewSet, basename='reset_password'
+)
 
 urlpatterns = [
     path('', include(router.urls)),

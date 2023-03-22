@@ -20,7 +20,7 @@ from django.utils.http import urlsafe_base64_encode
 from .constants import REGEX, MAX_LENGTH, MIN_LENGTH, DIRECTORY_PATH
 from .messages import SIGNUP_VALIDATION_ERROR, SIGNIN_VALIDATION_ERROR, \
     EMAIL_VALIDATOR_VALIDATION_ERROR, USERNAME_VALIDATOR_VALIDATION_ERROR, TOKEN_ERROR
-from .models import User, ForgetPassword
+from .models import User, ForgetPassword, generate_token
 
 
 class SignupSerializer(serializers.ModelSerializer):
@@ -407,7 +407,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
                   'email', 'contact', 'password']
 
 
-class ForgotPasswordSerializer(serializers.ModelSerializer):
+class ForgetPasswordSerializer(serializers.ModelSerializer):
     email = serializers.EmailField()
 
     @staticmethod
@@ -417,7 +417,7 @@ class ForgotPasswordSerializer(serializers.ModelSerializer):
         """
         try:
             user = User.objects.get(email=email)
-        except User.DoesNotExist:
+        except user.DoesNotExist:
             raise serializers.ValidationError("User does not exist")
 
         PasswordResetForm({'email': email})
@@ -429,12 +429,15 @@ class ForgotPasswordSerializer(serializers.ModelSerializer):
         # Generate a password reset token and URL for the user
         user = User.objects.get(email=validated_data['email'])
         uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = default_token_generator.make_token(user)
-        reset_url = request.build_absolute_uri(reverse('forget_password-list')) + f'?uidb64={uid}&token={token}'
+        token = generate_token(user)
+        reset_url = request.build_absolute_uri(
+            reverse('reset_password-list', kwargs={'token': token})
+        )
+
         # Send the password reset email to the user
-        forget_password = ForgetPassword.objects.update_or_create(
+        ForgetPassword.objects.update_or_create(
             user=user,
-            defaults={'forget_password_token': token},
+            forget_password_token=token,
         )
         send_mail(
             'Password Reset Request',
@@ -449,4 +452,22 @@ class ForgotPasswordSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['email']
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['confirm_password']:
+            raise serializers.ValidationError("Passwords do not match")
+
+        return attrs
+
+    def create(self, validated_data):
+        user = self.context.get('user')
+        user.set_password(validated_data['new_password'])
+        user.save()
+
+        return user
 

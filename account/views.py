@@ -12,8 +12,9 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .messages import SUCCESS_MESSAGE, ERROR_MESSAGE
 from .serializers import SignupSerializer, SigninSerializer, UsernameValidatorSerializer, \
-    EmailValidatorSerializer, SignOutSerializer, UserProfileSerializer, ForgotPasswordSerializer
-from .models import User
+    EmailValidatorSerializer, SignOutSerializer, UserProfileSerializer, \
+    ResetPasswordSerializer, ForgetPasswordSerializer
+from .models import User, ForgetPassword
 
 
 # pylint: disable=too-many-ancestors
@@ -187,18 +188,50 @@ class UserProfileView(viewsets.ModelViewSet):
 
 
 class ForgotPasswordView(viewsets.ModelViewSet):
-    serializer_class = ForgotPasswordSerializer
+    """
+    View to perform send mail operation with a
+    link attached to it to reset password
+    """
+    serializer_class = ForgetPasswordSerializer
     queryset = User
 
     def get_queryset(self):
         return User.objects.filter(email='email').first()
 
     def create(self, request, *args, **kwargs):
-        serializer = ForgotPasswordSerializer(data=request.data, context={'request': request})
+        serializer = ForgetPasswordSerializer(data=request.data, context={'request': request})
         if serializer.is_valid(raise_exception=True):
             serializer.create(serializer.validated_data)
             return Response({'message': 'Password reset email sent'},
                             status=status.HTTP_200_OK)
-        return Response({'message': 'Email verification failed'},
-                        status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {'message': 'Email verification failed'}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+class ResetPasswordViewSet(viewsets.ViewSet):
+    """
+    View to handle resetting the user's password
+    """
+    serializer_class = ResetPasswordSerializer
+
+    def create(self, request, token):
+        try:
+            password_reset_token = ForgetPassword.objects.get(forget_password_token=token)
+        except ForgetPassword.DoesNotExist:
+            return Response({'message': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = password_reset_token.user
+        serializer = ResetPasswordSerializer(
+            data=request.data, context={'user': user}
+        )
+        if serializer.is_valid():
+            serializer.save()
+            password_reset_token.delete()
+            return Response(
+                {'message': 'Password reset successful'}, status=status.HTTP_200_OK
+            )
+        return Response(
+            {'message': 'Invalid password'}, status=status.HTTP_400_BAD_REQUEST
+        )
 
