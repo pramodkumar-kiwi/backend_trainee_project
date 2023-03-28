@@ -14,7 +14,7 @@ class ImageGallery(models.Model):
     """
     user = models.ForeignKey(User, on_delete=models.CASCADE,
                              related_name='image_gallery_user_set')
-    gallery_name = models.CharField(max_length=20)
+    gallery_name = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     objects = models.Manager()

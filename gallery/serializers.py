@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from gallery.constants import MAX_LENGTH, MIN_LENGTH, IMAGE_GALLERY_PATH, MAX_LIMIT, \
-    MAX_SIZE_IMAGE
+    MAX_SIZE_IMAGE, IMAGE_GALLERY
 from gallery.messages import VALIDATION
 from gallery.models import ImageGallery, Image
 from gallery.utils import generate_unique_image
@@ -237,7 +237,21 @@ class ImageGalleryUpdateSerializer(serializers.ModelSerializer):
             username=user.username, gallery_name=validated_data['gallery_name']
         )
         os.rename(old_path, new_path)
+        # get all the images in the gallery being updated
+        images = Image.objects.filter(image_gallery=instance)
+        # update the paths of all the images with the new gallery name
+        for image in images:
+            image_path = os.path.join(
+                IMAGE_GALLERY.format(
+                    username=user.username, gallery_name=validated_data['gallery_name']
+                ),
+                image.image.name.split('/')[-1]
+            )
+            image.image.name = image_path
+            Image.objects.bulk_update(images, ['image'])
+
         updated_instance = ImageGallery.objects.get(id=instance.id)
+
         return updated_instance
 
     # pylint: disable=too-few-public-methods

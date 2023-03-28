@@ -5,49 +5,59 @@ and userprofile serializer to perform functions that call in views.
 
 import os
 import re
-from rest_framework import serializers
-from django.contrib.auth import authenticate
-from django.contrib.auth.hashers import make_password
-from rest_framework_simplejwt.exceptions import InvalidToken
-from rest_framework_simplejwt.tokens import RefreshToken, TokenError
-from django.contrib.auth.forms import PasswordResetForm
-from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
-from django.urls import reverse
+
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
+from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.forms import PasswordResetForm
+from django.core.mail import send_mail
+from django.urls import reverse
+
+from rest_framework import serializers
+from rest_framework_simplejwt.exceptions import InvalidToken
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
 from .constants import REGEX, MAX_LENGTH, MIN_LENGTH, DIRECTORY_PATH
 from .messages import SIGNUP_VALIDATION_ERROR, SIGNIN_VALIDATION_ERROR, \
-    EMAIL_VALIDATOR_VALIDATION_ERROR, USERNAME_VALIDATOR_VALIDATION_ERROR, TOKEN_ERROR
-from .models import User, ForgetPassword, generate_token
+    EMAIL_VALIDATOR_VALIDATION_ERROR, USERNAME_VALIDATOR_VALIDATION_ERROR, \
+    TOKEN_ERROR, RESET_PASSWORD, FORGET_PASSWORD
+from .utils import generate_token
+from .models import User, ForgetPassword
 
 
 class SignupSerializer(serializers.ModelSerializer):
     """
     serializer for Registering requested user
     """
-    first_name = serializers.CharField(max_length=MAX_LENGTH['first_name'],
-                                       min_length=MIN_LENGTH['first_name'],
-                                       required=True, allow_blank=False, trim_whitespace=True,
-                                       error_messages=SIGNUP_VALIDATION_ERROR['first_name'])
-    last_name = serializers.CharField(max_length=MAX_LENGTH['last_name'],
-                                      min_length=MIN_LENGTH['last_name'],
-                                      required=True, allow_blank=False, trim_whitespace=False,
-                                      error_messages=SIGNUP_VALIDATION_ERROR['last_name'])
-    username = serializers.CharField(min_length=MIN_LENGTH['username'],
-                                     max_length=MAX_LENGTH['username'],
-                                     required=True, allow_blank=False, trim_whitespace=False,
-                                     error_messages=SIGNUP_VALIDATION_ERROR['username'])
-    email = serializers.EmailField(required=True, allow_blank=False,
-                                   error_messages=SIGNUP_VALIDATION_ERROR['email'])
-    contact = serializers.CharField(min_length=MIN_LENGTH['contact'],
-                                    max_length=MAX_LENGTH['contact'],
-                                    required=True, allow_blank=False,
-                                    error_messages=SIGNUP_VALIDATION_ERROR['contact'])
-    password = serializers.CharField(write_only=True, min_length=MIN_LENGTH['password'],
-                                     max_length=MAX_LENGTH['password'], allow_blank=False,
-                                     error_messages=SIGNUP_VALIDATION_ERROR['password'])
+    first_name = serializers.CharField(
+        max_length=MAX_LENGTH['first_name'], min_length=MIN_LENGTH['first_name'],
+        required=True, allow_blank=False, trim_whitespace=True,
+        error_messages=SIGNUP_VALIDATION_ERROR['first_name']
+    )
+    last_name = serializers.CharField(
+        max_length=MAX_LENGTH['last_name'], min_length=MIN_LENGTH['last_name'],
+        required=True, allow_blank=False, trim_whitespace=False,
+        error_messages=SIGNUP_VALIDATION_ERROR['last_name']
+    )
+    username = serializers.CharField(
+        min_length=MIN_LENGTH['username'], max_length=MAX_LENGTH['username'],
+        required=True, allow_blank=False, trim_whitespace=False,
+        error_messages=SIGNUP_VALIDATION_ERROR['username']
+    )
+    email = serializers.EmailField(
+        required=True, allow_blank=False,
+        error_messages=SIGNUP_VALIDATION_ERROR['email']
+    )
+    contact = serializers.CharField(
+        min_length=MIN_LENGTH['contact'], max_length=MAX_LENGTH['contact'],
+        required=True, allow_blank=False,
+        error_messages=SIGNUP_VALIDATION_ERROR['contact']
+    )
+    password = serializers.CharField(
+        write_only=True, min_length=MIN_LENGTH['password'], max_length=MAX_LENGTH['password'],
+        allow_blank=False, error_messages=SIGNUP_VALIDATION_ERROR['password']
+    )
 
     @staticmethod
     def validate_first_name(value):
@@ -130,14 +140,16 @@ class SigninSerializer(serializers.ModelSerializer):
     """
     Define a serializer for a signin view in Django
     """
-    username = serializers.CharField(min_length=MIN_LENGTH['username'],
-                                     max_length=MAX_LENGTH['username'],
-                                     required=True, allow_blank=False, trim_whitespace=False,
-                                     error_messages=SIGNIN_VALIDATION_ERROR['username'])
-    password = serializers.CharField(max_length=MAX_LENGTH['password'],
-                                     min_length=MIN_LENGTH['password'],
-                                     write_only=True, required=True, trim_whitespace=False,
-                                     error_messages=SIGNIN_VALIDATION_ERROR['password'])
+    username = serializers.CharField(
+        min_length=MIN_LENGTH['username'], max_length=MAX_LENGTH['username'],
+        required=True, allow_blank=False, trim_whitespace=False,
+        error_messages=SIGNIN_VALIDATION_ERROR['username']
+    )
+    password = serializers.CharField(
+        max_length=MAX_LENGTH['password'], min_length=MIN_LENGTH['password'],
+        write_only=True, required=True, trim_whitespace=False,
+        error_messages=SIGNIN_VALIDATION_ERROR['password']
+    )
 
     @staticmethod
     def validate_username(value):
@@ -271,9 +283,9 @@ class UsernameValidatorSerializer(serializers.ModelSerializer):
     """
     serializer for Validating username at runtime
     """
-    username = serializers.CharField(min_length=8, max_length=16, required=True, allow_blank=False,
-                                     trim_whitespace=False,
-                                     error_messages=USERNAME_VALIDATOR_VALIDATION_ERROR['username'])
+    username = serializers.CharField(
+        min_length=8, max_length=16, required=True, allow_blank=False,
+        trim_whitespace=False, error_messages=USERNAME_VALIDATOR_VALIDATION_ERROR['username'])
 
     @staticmethod
     def validate_username(value):
@@ -305,27 +317,33 @@ class UserProfileSerializer(serializers.ModelSerializer):
     serializer for User model that return the authenticated
     user details and update them
     """
-    first_name = serializers.CharField(max_length=MAX_LENGTH['first_name'],
-                                       min_length=MIN_LENGTH['first_name'],
-                                       required=True, allow_blank=False, trim_whitespace=True,
-                                       error_messages=SIGNUP_VALIDATION_ERROR['first_name'])
-    last_name = serializers.CharField(max_length=MAX_LENGTH['last_name'],
-                                      min_length=MIN_LENGTH['last_name'],
-                                      required=True, allow_blank=False, trim_whitespace=False,
-                                      error_messages=SIGNUP_VALIDATION_ERROR['last_name'])
-    username = serializers.CharField(min_length=MIN_LENGTH['username'],
-                                     max_length=MAX_LENGTH['username'],
-                                     required=True, allow_blank=False, trim_whitespace=False,
-                                     error_messages=SIGNUP_VALIDATION_ERROR['username'])
-    email = serializers.EmailField(required=True, allow_blank=False,
-                                   error_messages=SIGNUP_VALIDATION_ERROR['email'])
-    contact = serializers.CharField(min_length=MIN_LENGTH['contact'],
-                                    max_length=MAX_LENGTH['contact'],
-                                    required=True, allow_blank=False,
-                                    error_messages=SIGNUP_VALIDATION_ERROR['contact'])
-    password = serializers.CharField(write_only=True, min_length=MIN_LENGTH['password'],
-                                     max_length=MAX_LENGTH['password'], allow_blank=False,
-                                     error_messages=SIGNUP_VALIDATION_ERROR['password'])
+    first_name = serializers.CharField(
+        max_length=MAX_LENGTH['first_name'], min_length=MIN_LENGTH['first_name'],
+        required=True, allow_blank=False, trim_whitespace=True,
+        error_messages=SIGNUP_VALIDATION_ERROR['first_name']
+    )
+    last_name = serializers.CharField(
+        max_length=MAX_LENGTH['last_name'], min_length=MIN_LENGTH['last_name'],
+        required=True, allow_blank=False, trim_whitespace=False,
+        error_messages=SIGNUP_VALIDATION_ERROR['last_name']
+    )
+    username = serializers.CharField(
+        min_length=MIN_LENGTH['username'], max_length=MAX_LENGTH['username'],
+        required=True, allow_blank=False, trim_whitespace=False,
+        error_messages=SIGNUP_VALIDATION_ERROR['username']
+    )
+    email = serializers.EmailField(
+        required=True, allow_blank=False, error_messages=SIGNUP_VALIDATION_ERROR['email']
+    )
+    contact = serializers.CharField(
+        min_length=MIN_LENGTH['contact'], max_length=MAX_LENGTH['contact'],
+        required=True, allow_blank=False,
+        error_messages=SIGNUP_VALIDATION_ERROR['contact']
+    )
+    password = serializers.CharField(
+        write_only=True, min_length=MIN_LENGTH['password'], max_length=MAX_LENGTH['password'],
+        allow_blank=False, error_messages=SIGNUP_VALIDATION_ERROR['password']
+    )
 
     @staticmethod
     def validate_first_name(value):
@@ -408,6 +426,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class ForgetPasswordSerializer(serializers.ModelSerializer):
+    """
+    forget password serializer to verify the email of the user
+    and send the mail to its register email.
+    """
     email = serializers.EmailField()
 
     @staticmethod
@@ -416,25 +438,28 @@ class ForgetPasswordSerializer(serializers.ModelSerializer):
         Validate the user's email using Django's PasswordResetForm
         """
         try:
-            user = User.objects.get(email=email)
-        except user.DoesNotExist:
-            raise serializers.ValidationError("User does not exist")
+            User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(FORGET_PASSWORD['email']['email_not_exist'])
 
         PasswordResetForm({'email': email})
 
         return email
 
     def create(self, validated_data):
+        """
+        Generate a password reset token and URL for the user
+        :param validated_data: email
+        :return: validated data
+        """
         request = self.context.get('request')
-        # Generate a password reset token and URL for the user
         user = User.objects.get(email=validated_data['email'])
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        urlsafe_base64_encode(force_bytes(user.pk))
         token = generate_token(user)
         reset_url = request.build_absolute_uri(
             reverse('reset_password-list', kwargs={'token': token})
         )
 
-        # Send the password reset email to the user
         ForgetPassword.objects.update_or_create(
             user=user,
             forget_password_token=token,
@@ -449,20 +474,39 @@ class ForgetPasswordSerializer(serializers.ModelSerializer):
 
         return validated_data
 
+    # pylint: disable=too-few-public-methods
     class Meta:
+        """
+        Class meta to define the model and the field
+        of that model.
+        """
         model = User
         fields = ['email']
 
 
 class ResetPasswordSerializer(serializers.Serializer):
+    """
+    Reset password serializer to validate the password and if it
+    is validated then save the new password with the old one in the database
+    """
     new_password = serializers.CharField(write_only=True)
     confirm_password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
         if attrs['new_password'] != attrs['confirm_password']:
-            raise serializers.ValidationError("Passwords do not match")
+            raise serializers.ValidationError(RESET_PASSWORD['password_reset']['do_not_match'])
 
         return attrs
+
+    @staticmethod
+    def validate_new_password(value):
+        """
+        checks password if valid : return value,
+        else : return validation error
+        """
+        if not re.match(REGEX["PASSWORD"], value):
+            raise serializers.ValidationError(SIGNUP_VALIDATION_ERROR['password']['invalid'])
+        return make_password(value)
 
     def create(self, validated_data):
         user = self.context.get('user')
@@ -470,4 +514,3 @@ class ResetPasswordSerializer(serializers.Serializer):
         user.save()
 
         return user
-

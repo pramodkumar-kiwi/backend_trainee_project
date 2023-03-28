@@ -80,3 +80,26 @@ SUCCESS_MESSAGE = {
 ERROR_MESSAGE = {
     'error': "Update Failed"
 }
+
+FORGET_PASSWORD = {
+    'email': {
+        'email_sent': 'Password reset email sent',
+        'email_failed': 'Email verification failed',
+        'email_not_exist': "Email does not exist",
+        'link_expired': 'Forget password link expired. '
+                        'Please submit the forget password form again.'
+    },
+}
+
+RESET_PASSWORD = {
+    'password_reset': {
+        'successful': 'Password reset successful',
+        'fail': 'Invalid password',
+        'do_not_match': 'Passwords do not match'
+
+    },
+    'token': {
+        'invalid': 'Invalid token',
+        'expired': 'Your token has been expired',
+    }
+}

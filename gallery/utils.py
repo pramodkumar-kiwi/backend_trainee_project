@@ -39,6 +39,7 @@ def generate_unique_image(user, image_gallery, validated_data):
             extension=extension
         )
         unique_filenames.append(unique_filename)
+        print(unique_filenames)
     return unique_filenames
 
 

@@ -34,3 +34,5 @@ IMAGE_UPLOAD_PATH = "{username}/image/{gallery_name}/{filename}"
 
 FILENAME_FORMAT = "{username}-{gallery_name}-{day}-{month}-{year}-" \
                   "{hour}-{minute}-{second}-{microsecond}{extension}"
+
+IMAGE_GALLERY = '{username}/image/{gallery_name}'

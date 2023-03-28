@@ -112,19 +112,33 @@ class ImageGalleryViewSet(viewsets.ModelViewSet):
         """
         This method creates a new instance of the ImageGallery model using validated serializer data
         and the primary key of the instance to be updated.
-        If the update is successful,it updates an existing instance and
+        If the update is successful, it updates an existing instance and
         returns a success response with a status code of 201.
-        If the update is unsuccessful it returns an error response with a status code of 400.
+        If the update is unsuccessful, it returns an error response with a status code of 400.
         :return: response object
         """
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data)
         if serializer.is_valid():
             image_gallery = serializer.update(instance, serializer.validated_data)
+            images = Image.objects.filter(image_gallery=image_gallery)
+            updated_image_urls = []
+            for image in images:
+                image_url = request.build_absolute_uri(image.image.url)
+                image_data = {
+                    "id": image.id,
+                    "image": image_url,
+                    "image_gallery_id": image_gallery.id,
+                    "created_at": image.created_at,
+                    "updated_at": image.updated_at
+                }
+                updated_image_urls.append(image_data)
+
             return Response({'message': SUCCESS_MESSAGES['IMAGE_GALLERY']['UPDATED_SUCCESSFULLY'],
                              'data': {
                                  'id': image_gallery.id,
                                  'gallery': image_gallery.gallery_name,
+                                 'images': updated_image_urls,
                                  'created_at': image_gallery.created_at,
                                  'updated_at': image_gallery.updated_at,
                              }},
